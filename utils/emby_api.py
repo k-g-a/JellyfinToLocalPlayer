@@ -114,7 +114,7 @@ class EmbyApi:
                   ids: typing.Union[list, str] = None, limit=50, parent_id=None,
                   sort_by='DateCreated,SortName',
                   recursive=True, ext_params: dict = None, filters=None, by_user=False):
-        # 注意默认不包含 Episode。同时 Episode 需要 ext_params={'HasTmdbId': None}。IncludeItemTypes = None
+        # Note: Episode is not included by default. Episode also needs ext_params={'HasTmdbId': None}. IncludeItemTypes = None
         fields = fields or self._default_fields
         fields = fields if isinstance(fields, str) else ','.join(fields)
         params = {
@@ -194,7 +194,7 @@ class EmbyApi:
                     count += 1
 
     def search_by_trakt(self, tk_ids: dict):
-        """只能搜索主条目，集和季不行"""
+        """Can only search main items, episodes and seasons are not supported"""
         ids_param = ','.join([k + '.' + str(v) for k, v in tk_ids.items() if v and k != 'tmdb'])  # tmdb may TV or Movie
         ext_params = {'AnyProviderIdEquals': ids_param, }
         res = self.get_items(ext_params=ext_params)
@@ -214,7 +214,7 @@ class EmbyApi:
                             'GenreItems', 'LocalTrailerCount', 'UserData', 'RecursiveItemCount', 'ChildCount',
                             'DisplayPreferencesId', 'AirDays', 'PrimaryImageAspectRatio', 'ImageTags',
                             'BackdropImageTags']
-        # useful_key.append('ExternalUrls') # 无法更改
+        # useful_key.append('ExternalUrls') # cannot be changed
         new = {k: v for k, v in old.items() if k in useful_key}
         new.update({'CriticRating': rating})
         self.post(path=post_path,

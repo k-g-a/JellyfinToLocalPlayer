@@ -54,13 +54,13 @@ def activate_window_by_win32(pid):
         nonlocal max_size_hwnd
         target_pid = ctypes.c_ulong()
         user32.GetWindowThreadProcessId(hwnd, ctypes.byref(target_pid))
-        # 注意一个进程可能有多个窗口，要过滤出最合适的那个窗口
+        # Note a process may have multiple windows, need to filter out the most suitable one
         if pid == target_pid.value:
-            # 排除掉不可见窗口
+            # Exclude invisible windows
             visible = user32.IsWindowVisible(hwnd)
             if not visible:
                 return False
-            # 排除掉标题为空的窗口
+            # Exclude windows with an empty title
             length = user32.GetWindowTextLengthW(hwnd)
             if length == 0:
                 return False
@@ -69,8 +69,8 @@ def activate_window_by_win32(pid):
             # user32.GetWindowTextW(hwnd, buff, length + 1)
             # print(f'title: {buff.value}')
 
-            # 以上两个过滤，已经可以通过mpv mpc-be mpc-hc vlc potplayer播放器的测试了
-            # 为兼容更多其他播放器 剩余窗口中保留最大那个窗口
+            # The above two filters already pass tests for mpv, mpc-be, mpc-hc, vlc and potplayer
+            # To be compatible with more other players, keep the largest window among the remaining ones
             rect = RECT()
             user32.GetWindowRect(hwnd, ctypes.byref(rect))
             # print(f'left: {rect.left}, right: {rect.right}, top: {rect.top}, bottom: {rect.bottom}')
@@ -92,30 +92,30 @@ def activate_window_by_win32(pid):
     user32.EnumWindows(proc, 0)
 
     if max_size_hwnd is not None:
-        # SetForegroundWindow激活窗口至少满足以下条件之一
+        # SetForegroundWindow requires at least one of the following conditions to activate a window
         # https://learn.microsoft.com/zh-cn/windows/win32/api/winuser/nf-winuser-setforegroundwindow
-        # 1.调用进程是前台进程。
-        # 2.调用进程由前台进程启动。
-        # 3.当前没有前台窗口，因此没有前台进程。
-        # 4.调用进程收到了最后一个输入事件。
-        # 5.正在调试前台进程或调用进程。
+        # 1. The calling process is the foreground process.
+        # 2. The calling process was launched by the foreground process.
+        # 3. There is currently no foreground window, so there's no foreground process.
+        # 4. The calling process received the last input event.
+        # 5. The foreground process or the calling process is being debugged.
 
-        # 要一些特殊的操作来实现
+        # Some special operations are needed to achieve this
 
-        # 当前线程pid，即当前python程序的线程，是播放器进程的调用者
+        # The current thread pid, i.e. the thread of the current python program, is the caller of the player process
         curr_pid = kernel32.GetCurrentThreadId()
-        # 当前激活的窗口
+        # The currently active window
         foreground_hwnd = user32.GetForegroundWindow()
-        # 当前激活窗口的pid
+        # The pid of the currently active window
         remote_pid = user32.GetWindowThreadProcessId(foreground_hwnd, 0)
-        # 关键点
+        # Key point
         # https://learn.microsoft.com/zh-cn/windows/win32/api/winuser/nf-winuser-attachthreadinput
-        # 一个线程的输入处理机制附加到另一个线程，两个线程共享输入状态
-        # 满足4.调用进程收到了最后一个输入事件
+        # Attach one thread's input processing mechanism to another thread, so the two threads share input state
+        # This satisfies condition 4: the calling process received the last input event
         user32.AttachThreadInput(curr_pid, remote_pid, True)
         user32.SetForegroundWindow(max_size_hwnd)
         user32.BringWindowToTop(max_size_hwnd)
-        # 分离两个线程
+        # Detach the two threads
         user32.AttachThreadInput(curr_pid, remote_pid, False)
         return True
 

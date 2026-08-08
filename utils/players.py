@@ -20,8 +20,8 @@ pipe_port_stack = list(reversed(range(25)))
 mpv_play_speed = {'media_title': 'speed'}
 
 
-# *_player_start 返回获取播放时间等操作所需参数字典
-# stop_sec_* 接收字典参数
+# *_player_start returns a dict of parameters needed for operations like getting playback time
+# stop_sec_* accepts dict parameters
 
 def get_pipe_or_port_str(get_pipe=False):
     pipe_port = 'pipe_name' if get_pipe else 58423
@@ -78,7 +78,7 @@ def mpv_player_start(cmd, start_sec=None, sub_file=None, media_title=None, get_s
             srt = save_sub_file(url=sub_file)
             cmd.append(f'--sub-files={srt}')
     if mount_disk_mode and is_iina:
-        # iina 读盘模式下 media-title 会影响下一集
+        # in iina disk-reading mode, media-title affects the next episode
         pass
     else:
         cmd.append(f'--force-media-title={media_title}')
@@ -89,7 +89,7 @@ def mpv_player_start(cmd, start_sec=None, sub_file=None, media_title=None, get_s
             cmd.append(f'--http-proxy=http://{proxy}')
     if start_sec is not None:
         if is_iina and mount_disk_mode:
-            # iina 读盘模式下 start_sec 会影响下一集
+            # in iina disk-reading mode, start_sec affects the next episode
             pass
         else:
             cmd.append(f'--start={start_sec}')
@@ -114,7 +114,7 @@ def mpv_player_start(cmd, start_sec=None, sub_file=None, media_title=None, get_s
     if mpv and intro_end:
         chapter_list = [{'title': 'Opening', 'time': intro_start}, {'title': 'Main', 'time': intro_end}]
         event_name = 'file-loaded'
-        mpv.command('set_property', 'chapter-list', chapter_list)  # 'file-loaded' 事件在起播快时会失效，此时本行则生效。
+        mpv.command('set_property', 'chapter-list', chapter_list)  # the 'file-loaded' event may fail if playback starts too quickly; in that case this line takes effect instead.
 
         @mpv.on_event(event_name)
         def fist_ep_intro_adder(_event_data):
@@ -174,7 +174,7 @@ def playlist_add_mpv(mpv: MPV, data, eps_data=None, limit=10):
     episodes = eps_data or list_episodes(data)
     is_iina = getattr(mpv, 'is_iina')
     mount_disk_mode = data['mount_disk_mode']
-    # 检查是否是新版loadfile命令
+    # Check whether it's the newer loadfile command
     # https://github.com/mpv-player/mpv/commit/c678033
     new_loadfile_cmd = False
     if not is_iina:
@@ -204,7 +204,7 @@ def playlist_add_mpv(mpv: MPV, data, eps_data=None, limit=10):
             sub_cmd = ''
             main_ep_sub = data.get('sub_file', '')
             if sub_file := ep['sub_file']:
-                # mpvnet 不支持 sub-files-toggle
+                # mpvnet doesn't support sub-files-toggle
                 if main_ep_sub and not getattr(mpv, 'is_mpvnet'):
                     sub_cmd = f',sub-files-remove={main_ep_sub},sub-files-append={main_ep_sub}'
                     sub_cmd = sub_cmd + f',sub-files-append={sub_file}'
@@ -270,7 +270,7 @@ def playlist_add_mpv(mpv: MPV, data, eps_data=None, limit=10):
             logger.info('mpv adding_thread OSError found, exit')
 
     threading.Thread(target=adding_thread, daemon=True).start()
-    # loop_episodes -> ep['mpv_cmd'] = mpv_cmd 貌似没被多线程运行影响
+    # loop_episodes -> ep['mpv_cmd'] = mpv_cmd doesn't seem to be affected by multi-threaded execution
     return playlist_data
 
 
@@ -290,8 +290,8 @@ def stop_sec_mpv(mpv: MPV, stop_sec_only=True, **_):
     @mpv.on_event('file-loaded')
     def chapters_info_gen(_event_data):
         chapters_dict.clear()
-        # 顺便获取判断 strm 是否播放完成所需的 total_sec 数据。
-        # 若视频秒加载，会没这个事件，导致首集数据获取失败，不过 strm 一般没这么快加载，先不管。
+        # also fetch the total_sec data needed to determine whether an strm has finished playing.
+        # if the video loads within a second, this event won't fire, causing the first episode's data fetch to fail; strm usually doesn't load that fast though, so not handled for now.
         if total_sec := mpv.command('get_property', 'duration'):
             _t = mpv.command('get_property', 'media-title')
             name_total_sec_dict[_t] = total_sec
@@ -379,11 +379,11 @@ def vlc_player_start(cmd: list, start_sec=None, sub_file=None, get_stop_sec=True
         cmd.remove('--playlist-enqueue')
     if sub_file:
         srt = save_sub_file(url=sub_file)
-        cmd.append(f':sub-file={srt}')  # vlc不支持http字幕
+        cmd.append(f':sub-file={srt}')  # vlc doesn't support http subtitles
     if start_sec is not None:
         cmd += [f':start-time={start_sec}']
 
-    # -- 开头是全局选项，会覆盖下一集标题，换成 : 却不生效，原因未知。故放弃添加标题。
+    # options starting with -- are global and would override the next episode's title; switching to : doesn't work either, reason unknown. So we gave up on adding a title.
     # cmd.append(f':input-title-format={media_title}')
     # cmd.append(f':video-title={media_title}')
 
@@ -451,13 +451,13 @@ def playlist_add_vlc(vlc: VLCHttpApi, data, eps_data=None, limit=5, **_):
         if mount_disk_mode or not sub_file:
             add_path = urllib.parse.quote(media_path)
             vlc.playlist_add(path=add_path)
-        # api 貌似不能添加字幕
+        # the api seemingly can't add subtitles
         else:
             if os.name != 'nt':
-                # 非 nt 的 vlc 经常不支持 '--one-instance', '--playlist-enqueue'
+                # non-nt vlc often doesn't support '--one-instance', '--playlist-enqueue'
                 # add_path = urllib.parse.quote(media_path)
                 # vlc.playlist_add(path=add_path)
-                # 目前采用自动连播方案，故含 http_sub 时，禁用播放列表。
+                # currently using the auto-continuous-playback approach, so disable the playlist when http_sub is present.
                 continue
             sub_ext = sub_file.rsplit('.', 1)[-1]
             sub_file = save_sub_file(sub_file, f'{os.path.splitext(ep["basename"])[0]}.{sub_ext}')
@@ -465,7 +465,7 @@ def playlist_add_vlc(vlc: VLCHttpApi, data, eps_data=None, limit=5, **_):
                    '--one-instance', '--playlist-enqueue',
                    f':sub-file={sub_file}']
             subprocess.run(cmd)
-        # media_title = os.path.basename(ep['file_path']) # 找不到方法添加标题，命令行，api
+        # media_title = os.path.basename(ep['file_path']) # couldn't find a way to add a title, either via command line or api
     return playlist_data
 
 
@@ -476,8 +476,8 @@ def stop_sec_vlc(vlc: VLCHttpApi, stop_sec_only=True, **_):
     stop_sec = None
     name_stop_sec_dict = {}
     name_total_sec_dict = {}
-    # rc interface 的 get_tile 会受到视频文件内置的标题影响。若采用 get_length 作为 id，动漫可能无法正常使用,故放弃，
-    # 而 http api 的话，又不能设置标题
+    # rc interface's get_title is affected by the title embedded in the video file. Using get_length as an id was abandoned because anime might not work properly then,
+    # but with the http api, we can't set the title either
     while True:
         try:
             stat = vlc.get('status', silence=True)
@@ -597,7 +597,7 @@ def playlist_add_mpc(mpc_path, data, eps_data=None, limit=4, **_):
         if mount_disk_mode:
             eps_list += add_list
         else:
-            # 若一次性添加会导致字幕有问题
+            # adding them all at once causes subtitle issues
             cmd = [mpc_path, *add_list]
             subprocess.run(cmd)
     if eps_list:
@@ -631,15 +631,15 @@ def stop_sec_mpc(mpc: MPCHttpApi, stop_sec_only=True, **_):
             total = total_stack.pop(0)
             total_stack.append(total_sec)
             if not stop_sec_only and path:
-                # emby 播放多版本时，PlaybackInfo 返回的数据里，不同版本 DirectStreamUrl 的 itemid 都一样（理应不同）。
-                # 所以用 basename 去除 itemid 来保证数据准确性。
+                # When emby plays multiple versions, in the data returned by PlaybackInfo, different versions' DirectStreamUrl share the same itemid (which should theoretically differ).
+                # So basename is used to strip the itemid to ensure data accuracy.
                 key = os.path.basename(path)
                 name_stop_sec_dict[key] = stop
                 name_total_sec_dict[key] = total
                 prefetch_data['stop_sec_dict'][key] = stop
         except Exception:
             logger.info('mpc stop', stop_stack[-2], stop_stack)
-            # 播放器关闭时，webui 可能返回 0
+            # webui may return 0 when the player closes
             name_stop_sec_dict = {k: v for k, v in name_stop_sec_dict.items() if k is not None}
             return stop_stack[-2] if stop_sec_only else (name_stop_sec_dict, name_total_sec_dict)
         time.sleep(0.5)
@@ -703,8 +703,8 @@ def playlist_add_pot(pid, player_path, data, eps_data=None, limit=5, **_):
         if not append or (mount_disk_mode and not mix_s0) or limit <= 0 or is_http_sub:
             continue
         limit -= 1
-        # f'/sub={ep["sub_file"]}' pot 下一集会丢失字幕
-        # /add /title 不能复用，会丢失 /title，选项要放后面，否则会有奇怪的问题。
+        # f'/sub={ep["sub_file"]}' pot loses the subtitle on the next episode
+        # /add /title can't be reused, /title would be lost; the option needs to be placed after, otherwise there will be strange issues.
         pot_cmds.append([player_path, ep['media_path'], '/add', f'/title={media_title}'])
     if pot_cmds:
         def add_thread():

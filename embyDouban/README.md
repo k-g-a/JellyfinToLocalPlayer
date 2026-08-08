@@ -1,28 +1,28 @@
 ## embyDouban
 
-emby 里增加：豆瓣 Bangumi bgm.tv 评分 链接 标签
+Adds to Emby: Douban, Bangumi bgm.tv ratings, links, and tags
 
-- 豆瓣评论：点击油猴插件后能看到开关。
-- 豆瓣链接：评分可点击，或在底部 IMDb 链接前面。
-- 番组链接：评分可点击，或在底部 在 TMDB 链接前面。
-- 番组标签：评分右侧。可选设置：看脚本代码注释。
+- Douban comments: click the userscript icon to see the toggle.
+- Douban link: the rating is clickable, or in front of the IMDb link at the bottom.
+- Bangumi link: the rating is clickable, or in front of the TMDB link at the bottom.
+- Bangumi tag: to the right of the rating. Optional setting: see the script code comments.
 
 ![](https://github.com/kjtsune/embyToLocalPlayer/raw/main/embyDouban/embyDouban.jpg)
 
 **FAQ**
 
-* 豆瓣：现改用 emby 标题来搜索，而不是 imdb id，准确性下降，仅供参考，欢迎修复。
-* 豆瓣：为了合理使用 api，默认只请求一次并缓存。  
-  但偶尔可能碰到你的 ip 或者设备被豆瓣拉黑，不返回。现象是豆瓣有这条目并且 imdb id 正确，但没显示。  
-  可以换设备和 ip 测试。或者三天后再看看，出错的浏览器缓存脚本会保留三天。
-* bgm.tv: 如果匹配不成功，会不显示评分，但显示链接。不过链接一般也是错误的。  
-  评分缓存策略：大概是老番30天，新番3天。
+* Douban: now searches using the Emby title instead of the imdb id, which reduces accuracy; for reference only, fixes welcome.
+* Douban: to use the API reasonably, requests are made only once by default and cached.  
+  But occasionally your IP or device may get blacklisted by Douban and return nothing. The symptom is that Douban has the entry and the imdb id is correct, but it's not shown.  
+  You can try a different device and IP. Or check again after three days; the browser cache for a failed script is kept for three days.
+* bgm.tv: if the match fails, the rating won't show, but the link will. However, the link is usually wrong too.  
+  Rating cache strategy: roughly 30 days for older anime and 3 days for new anime.
 
-**其他相关脚本**
+**Other related scripts**
 
 * [embyToLocalPlayer](https://greasyfork.org/zh-CN/scripts/448648-embytolocalplayer)
-  ：调用本地播放器。需要 Python。支持回传播放进度。
+  : calls a local player. Requires Python. Supports reporting playback progress.
 
-**感谢**
+**Thanks**
 
 - [JayXon/MoreMovieRatings](https://github.com/JayXon/MoreMovieRatings)

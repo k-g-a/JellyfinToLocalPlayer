@@ -283,7 +283,7 @@ class Configs:
     def check_str_match(self, _str, section, option, return_value=False, log=True,
                         log_by: typing.Literal[True, False] = None, order_only=False, get_next=False, get_pair=False,
                         fallback=None):
-        # 注意 order_only 在匹配失败时返回 0
+        # Note: order_only returns 0 when the match fails
         ini_list = self.ini_str_split(section, option, fallback='')
         match_list = [i for i in ini_list if i in _str]
         match_order = ini_list.index(match_list[0]) + 1 if match_list else 0
@@ -417,8 +417,8 @@ class Configs:
         self.set_player_path_by_mpv_embed_()
         is_new_subtitle_priority = False
         sub_priority = '中英特效, 双语特效, 简中特效, 简体特效, 特效, 中上, 中英, 双语, 简, simp, 中, chi, ass, srt, sup, und, ('
-        sub_p_comment = '''字幕未选中时，尝试按顺序规则加载外挂字幕，规则间逗号隔开。
-# 这些字符串是浏览器里选择字幕时，显示的名称小写化后的一部分。'''
+        sub_p_comment = '''When no subtitle is selected, try loading an external subtitle following these rules in order, rules separated by commas.
+# These strings are part of the lowercased display name shown when selecting subtitles in a browser.'''
         if configs.raw.get('dev', 'sub_lang_check', fallback=''):
             configs.backup_ini_file()
             MyLogger.log('breaking change: [dev] > sub_lang_check was replaced'
@@ -442,7 +442,7 @@ class Configs:
                 strm_direct_host = 'local, .\n'
             else:
                 strm_direct_host = '\n'
-            strm_host_comment = '启用直接播放 strm 内的文件链接，避免 Emby 中转，的服务器域名的关键词，逗号隔开。'
+            strm_host_comment = 'Keyword of the server domain used to enable directly playing the file link inside strm, avoiding an Emby relay, comma separated.'
             self.overwrite_value_to_ini('dev', 'strm_direct_host', strm_direct_host, new_comment=strm_host_comment)
 
 

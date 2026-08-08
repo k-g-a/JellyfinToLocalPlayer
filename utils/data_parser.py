@@ -23,7 +23,7 @@ def _get_sub_order_by_ini(_sub_list):
 def subtitle_checker(media_streams, sub_index, mount_disk_mode, log=False):
     sub_inner_idx = 0
     sub_dict = {}
-    # sub_index >= 0 选中字幕；-1 未选中字幕；-3 用于播放列表仅检测外挂字幕，内置字幕由播放器决定
+    # sub_index >= 0 subtitle selected; -1 subtitle not selected; -3 used in playlists to only check external subtitles, embedded subtitles are decided by the player itself
     sub_dict_list = [s for s in media_streams if s['Type'] == 'Subtitle']
     sub_ext_list = [s for s in sub_dict_list if s['IsExternal']]
     sub_inner_list = [s for s in sub_dict_list if not s['IsExternal']]
@@ -31,7 +31,7 @@ def subtitle_checker(media_streams, sub_index, mount_disk_mode, log=False):
     if sub_index == -1 and not sub_ext_list and sub_inner_list:
         _get_sub_order_by_ini(sub_inner_list)
         sub_inner_match = [i for i in sub_inner_list if i['Order'] != 0]
-        if sub_inner_match:  # 可能影响多版本补充备选时的字幕顺序，问题不大，先不管。
+        if sub_inner_match:  # may affect the subtitle order when supplementing alternatives for multiple versions, not a big issue, leave it for now.
             sub_inner_match.sort(key=lambda s: s['Order'])
             sub_inner_match = sub_inner_match[0]
             sub_inner_idx = sub_inner_list.index(sub_inner_match) + 1
@@ -62,7 +62,7 @@ def parse_received_data_emby(received_data):
     main_ep_info = extra_data['mainEpInfo']
     episodes_info = extra_data.get('episodesInfo') or []
     playlist_info = extra_data.get('playlistInfo') or []
-    # 随机播放剧集媒体库时，油猴没获取其他集的 Emby 标题，导致第一集回传数据失败，暂不处理。
+    # When randomly playing a TV show library, the userscript didn't get the Emby title of other episodes, causing the first episode's reported data to fail, not handled for now.
     emby_title = main_ep_to_title(main_ep_info) if not playlist_info else None
     intro_time = main_ep_intro_time(main_ep_info)
     api_client = received_data['ApiClient']
@@ -94,10 +94,10 @@ def parse_received_data_emby(received_data):
         media_source_info = version_prefer_emby(media_sources) \
             if len(media_sources) > 1 and is_emby else media_sources[0]
         media_source_id = media_source_info['Id']
-    # strm 多版本似乎找不到其他版本服务器文件路径，需要额外请求分集数据。不过不需要读盘模式，还好。
-    # 因此 strm 多版本 且 is_http_source 时，正确播放，但文件标题只有一种，先不处理。
-    source_path = media_source_info['Path']  # strm 的时候和 file_path 不一致，是 strm 里的地址文本
-    file_path = source_path if main_ep_info.get('Type') == 'TvChannel' else  main_ep_info['Path']  # 多版本时候有误，直播源时没有。
+    # For strm with multiple versions, the server file path of other versions seemingly can't be found, requiring an extra request for episode data. But disk-reading mode isn't needed, so that's fine.
+    # Therefore, when strm has multiple versions and is_http_source, playback is correct, but the file title only has one form; not handled for now.
+    source_path = media_source_info['Path']  # for strm, this differs from file_path; it's the address text inside the strm
+    file_path = source_path if main_ep_info.get('Type') == 'TvChannel' else  main_ep_info['Path']  # incorrect for multiple versions, not an issue for live streams.
     is_strm = file_path != source_path and file_path.endswith('.strm') or media_source_info.get('Container') == 'strm'
     is_http_source =  source_path.startswith('http')
     strm_direct = configs.check_str_match(netloc, 'dev', 'strm_direct_host', log_by=True)
@@ -109,25 +109,25 @@ def parse_received_data_emby(received_data):
             s['Id']: i['Path']
             for i in episodes_info
             for s in i.get('MediaSources', [])
-        }  # episodes_info 由油猴拦截点击，手动请求时，会包含多版本条目，此时会解决下方的路径错误问题。
+        }  # episodes_info is populated by the userscript intercepting clicks; for manual requests it will include multi-version entries, which resolves the path error issue below.
         if media_source_id in source_map:
             file_path = source_map[media_source_id]
         else:
             basename = os.path.basename(file_path)
-            # Season 0/S0E04-ver-a.strm Specials/S0E04-ver-b.strm 这种情况也可能导致路径文件夹名称拼装错误。
+            # Cases like Season 0/S0E04-ver-a.strm and Specials/S0E04-ver-b.strm can also cause the path folder name to be assembled incorrectly.
             for _m in media_sources:
-                if _m['Name'] in basename:  # S01E01.mkv 这种无解
+                if _m['Name'] in basename:  # a case like S01E01.mkv is unsolvable
                     file_path = file_path.replace(_m['Name'], media_source_info['Name'])
                     break
 
-    # stream_url = f'{scheme}://{netloc}{media_source_info["DirectStreamUrl"]}' # 可能为转码后的链接
+    # stream_url = f'{scheme}://{netloc}{media_source_info["DirectStreamUrl"]}' # may be a transcoded link
     basename = os.path.basename(file_path)
     container = os.path.splitext(file_path)[-1]
     extra_str = '/emby' if is_emby else ''
     server_version = api_client['_serverVersion']
     _a, _b, _c, *_d = [int(i) for i in server_version.split('.')]
     stream_name = 'original' if match_version_range(server_version, ver_range='4.8.0.40-9') else 'stream'
-    if media_source_info.get('Container') == 'bluray':  # emby bdmv 根据路径选播放器也够用了，先不管
+    if media_source_info.get('Container') == 'bluray':  # emby selects the player based on path for bdmv, good enough, not handled for now
         container = '.m2ts'
     if media_source_info.get('VideoType') == 'BluRay':  # jellyfin
         stream_name = 'main'
@@ -165,11 +165,11 @@ def parse_received_data_emby(received_data):
         hint = '\nyou may want to set strm_direct_host in ini' if not strm_direct else ''
         logger.info(f'{source_path=}{hint}')
 
-    if mount_disk_mode:  # 肯定不会是 http
+    if mount_disk_mode:  # definitely won't be http
         if is_strm:
             if strm_direct:
                 media_path = translate_path_by_ini(source_path)
-            else:  # strm 文件无法直接播放
+            else:  # strm files can't be played directly
                 media_path = stream_url
                 mount_disk_mode = False
         else:
@@ -181,7 +181,7 @@ def parse_received_data_emby(received_data):
             media_path = stream_url
 
     media_streams = media_source_info['MediaStreams']
-    # mpv 可传递首集内封字幕选中序号，其他播放器由播放器自身规则决定。
+    # mpv can pass the selected index of the first episode's embedded subtitle; other players decide this by their own rules.
     sub_index, sub_inner_idx, sub_dict = subtitle_checker(media_streams, sub_index, mount_disk_mode, log=True)
     sub_jellyfin_str = '' if is_emby \
         else f'{item_id[:8]}-{item_id[8:12]}-{item_id[12:16]}-{item_id[16:20]}-{item_id[20:]}/'
@@ -190,7 +190,7 @@ def parse_received_data_emby(received_data):
         # sub_data = media_source_info['MediaStreams'][sub_index]
         fallback_sub = f'{extra_str}/videos/{sub_jellyfin_str}{item_id}{sub_emby_str}/Subtitles' \
                        f'/{sub_index}/0/Stream.{sub_dict["Codec"]}?api_key={api_key}'
-        # pot 240618 不支持 emby DeliveryUrl 的 vtt 格式，实际是 srt。
+        # pot 240618 doesn't support emby DeliveryUrl's vtt format, which is actually srt.
         sub_delivery_url = sub_dict['Codec'] not in ('sup', 'srt') and sub_dict.get('DeliveryUrl') or fallback_sub
     else:
         sub_delivery_url = None
@@ -351,14 +351,14 @@ def parse_received_data_plex(received_data):
         playlist_diff_dict = dict(
             basename=basename,
             media_basename=media_basename,
-            item_id=item_id,  # 视频流的 ID
+            item_id=item_id,  # ID of the video stream
             file_path=file_path,
             stream_url=stream_url,
             media_path=media_path,
             fake_name=fake_name,
             total_sec=total_sec,
             sub_file=sub_file,
-            index=meta['index'] if meta['type'] == 'episode' else _index,  # 可能会有小数点吗
+            index=meta['index'] if meta['type'] == 'episode' else _index,  # can this have a decimal point?
             size=size
         )
 
@@ -412,8 +412,8 @@ def list_playlist_or_mix_s0(data):
     user_id = data['user_id']
     extra_str = '/emby' if data['server'] == 'emby' else ''
     device_id, play_session_id = data['device_id'], data['play_session_id']
-    playlist_info = data['playlist_info']  # 电影或者音乐视频
-    episodes_info = data['episodes_info']  # 可能是混合了S0的正确集数
+    playlist_info = data['playlist_info']  # movie or music video
+    episodes_info = data['episodes_info']  # may be a mix of correct episode numbers with S0
 
     params = {'X-Emby-Token': api_key, }
     headers = {'accept': 'application/json', }
@@ -500,12 +500,12 @@ def list_episodes(data: dict):
         current_key = ep_to_key(ep_current)
         curr_count = ep_raw_cur_list.count(current_key)
         curr_raw_index = episodes_data.index(ep_current)
-        if curr_count > 1:  # 适配首集多版本但过于相似的情况
+        if curr_count > 1:  # adapt to the case where the first episode has multiple, too-similar versions
             _episodes_data = episodes_data.copy()
             del _episodes_data[curr_raw_index + 1:curr_raw_index + curr_count]
             # del ep_raw_cur_list[curr_raw_index + 1:curr_raw_index + curr_count]
             _episodes_data[curr_raw_index] = ep_current
-            if ep_num == len(_episodes_data):  # 只有首集是多版本时
+            if ep_num == len(_episodes_data):  # when only the first episode has multiple versions
                 return _episodes_data
             del _episodes_data
         _cut_cur_list = ep_seq_cur_list[ep_seq_cur_list.index(current_key):]
@@ -514,10 +514,10 @@ def list_episodes(data: dict):
         official_rule = file_path.rsplit(' - ', 1)
         official_rule = official_rule[-1] if len(official_rule) == 2 else None
         clean_path = re.split(r'E\d\d?', file_path, maxsplit=1)[-1].strip()
-        if len(clean_path) <= 5:  # 仅文件格式的话，不够严谨
+        if len(clean_path) <= 5:  # not rigorous enough if it's just a file extension
             clean_path = None
 
-        # 适配由原始文件派生出多版本的情况 S01E01.mkv, S01E01 - ver.mkv
+        # adapt to cases where multiple versions are derived from an original file, e.g. S01E01.mkv, S01E01 - ver.mkv
         if curr_count > 1:
             _sortest_ep, _is_real_raw = multi_ver_find_sortest_ep(
                 episodes_data[curr_raw_index: curr_raw_index + curr_count])
@@ -533,10 +533,10 @@ def list_episodes(data: dict):
                     logger.info(f'version_filter: success by raw name check, pass {len(_raw_name_success)}')
                     return _raw_name_success
 
-        # 会禁用前向播放列表。
+        # This disables the forward playlist.
         def check_ep_cur_is_sequence(__ep_data):
-            __ep_success = []  # 成功的要大于 2，不然可能只是下一集的首个文件模糊匹配成功，不精确。
-            # 但是如果要求大于 2，下一集是末集的话，可能会误伤，优先采用 prefer，prefer 有选中优先策略。
+            __ep_success = []  # a success count must exceed 2, otherwise it might just be a fuzzy match of the next episode's first file, not precise.
+            # But if we require more than 2 and the next episode is the last one, it might be wrongly excluded; prefer to use "prefer", which has a selection-priority strategy.
             _cut_ep_data = __ep_data[__ep_data.index(ep_current):]
             if len(_cut_cur_list) == 1:
                 return [ep_current]
@@ -564,7 +564,7 @@ def list_episodes(data: dict):
                         builtin_res = _success
                         break
 
-        ver_re = ''.join(ver_re.split('\n'))  # 多行转单行
+        ver_re = ''.join(ver_re.split('\n'))  # convert multi-line to single line
         ini_re = re.findall(ver_re, file_path, re.I)
         ver_re = re.compile('|'.join(ini_re))
         _ep_data = [i for i in episodes_data if len(ver_re.findall(i['Path'])) == len(ini_re)]
@@ -649,7 +649,7 @@ def list_episodes(data: dict):
         title_intro_map_fail = not episodes_info
 
         for ep in episodes_info:
-            if ep['SeasonId'] != season_id:  # 影响S0混播，使用频率过低，先不管
+            if ep['SeasonId'] != season_id:  # affects S0 mixed playback, used too rarely, not handled for now
                 continue
             if 'ParentIndexNumber' not in ep or 'IndexNumber' not in ep:
                 title_intro_map_fail = True
@@ -696,11 +696,11 @@ def list_episodes(data: dict):
         if is_http_direct_strm:
             stream_url = source_path
 
-        if mount_disk_mode:  # 肯定不会是 http
+        if mount_disk_mode:  # definitely won't be http
             if is_strm:
                 if strm_direct:
                     media_path = translate_path_by_ini(source_path)
-                else:  # strm 文件无法直接播放
+                else:  # strm files can't be played directly
                     media_path = stream_url
             else:
                 media_path = translate_path_by_ini(file_path)
@@ -739,8 +739,8 @@ def list_episodes(data: dict):
             for none_key in ['start_sec', 'main_ep_info', 'episodes_info']:
                 result[none_key] = None
         else:
-            # 因入库时间不同，同一集 ver_a ver_b 的 emby 标题可能不同，网页只会显示 ver_a 的。
-            # 起播集标题固定为 ver_a，但通过 version_prefer 实际播放和列表里数据可能为 b，导致回传失败。
+            # Because of different library-add times, the emby title of ver_a and ver_b for the same episode may differ; the web page only shows ver_a's.
+            # The starting episode's title is fixed to ver_a, but with version_prefer, the actually played and listed data may be b, causing reporting to fail.
             media_title = data['media_title']
         result.update(dict(
             basename=basename,
@@ -754,7 +754,7 @@ def list_episodes(data: dict):
             total_sec=total_sec,
             sub_file=sub_file,
             index=index,
-            size=size,  # Jellyfin strm 没有这个键
+            size=size,  # Jellyfin strm doesn't have this key
             media_title=media_title,
             intro_start=start_data.get(unique_key),
             intro_end=end_data.get(unique_key),
@@ -764,11 +764,11 @@ def list_episodes(data: dict):
         return result
 
     if playlist_info:
-        # jellyfin 花絮 疑似也会被当作播放列表数据。
+        # jellyfin extras/specials seem to also be treated as playlist data.
         def chunk_list(lst, chunk_size):
             for i in range(0, len(lst), chunk_size):
                 yield lst[i:i + chunk_size]
-        # 限制随机播放列表条目数量避免 HTTP Error 414: URI Too Long
+        # limit the number of random playlist entries to avoid HTTP Error 414: URI Too Long
         ids = [ep['Id'] for ep in playlist_info][:200]
         _eps_parts = []
         for _ids in chunk_list(ids, 200):
@@ -788,18 +788,18 @@ def list_episodes(data: dict):
         params.update({'Fields': 'MediaSources,Path,ProviderIds',
                        'SeasonId': season_id, })
         series_id = main_ep_info['SeriesId']
-        if not season_id:  # Jellyfin 10.10.7 未知季: mainEpInfo 缺失季 id，导致请求失败。10.9.11 10.11.1 正常。
+        if not season_id:  # Jellyfin 10.10.7 unknown season: mainEpInfo is missing the season id, causing the request to fail. 10.9.11 and 10.11.1 are fine.
             season_id = series_id
             del params['SeasonId']
             logger.info('playlist: season_id not found fallback to series_id, may leak error')
-        # 改用 season_id，避免S0命名不规范导致美化标题失败，不知道会不会影响S0混播。
+        # Switched to season_id to avoid failing to prettify the title due to non-standard S0 naming; unsure whether this affects S0 mixed playback.
         url = f'{scheme}://{netloc}{extra_str}/Shows/{season_id}/Episodes'
         episodes = requests_urllib(url, params=params, headers=headers, get_json=True)
     # dump_json_file(episodes, 'z_playlist_movie.json')
     eps_error = [i for i in episodes['Items'] if 'Path' not in i or 'RunTimeTicks' not in i]
     path_error = [i for i in eps_error if 'Path' not in i]
     if eps_error:
-        # total_sec 没有，不方便判断进度。
+        # No total_sec, hard to determine progress.
         ids_error = [i['MediaSources'][0]['Id'] for i in path_error]
         try:
             eps_error = [f"E{i['IndexNumber']}-{i['Name']}-id={i['Id']}" for i in eps_error]

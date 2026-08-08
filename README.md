@@ -1,81 +1,81 @@
 # etlp - embyToLocalPlayer
 
-etlp - Emby/Jellyfin 调用 PotPlayer mpv IINA MPC VLC 播放，并回传播放进度（可关）。适配 Plex。
+etlp - Use Emby/Jellyfin to launch PotPlayer mpv IINA MPC VLC for playback, and report playback progress back (optional). Also supports Plex.
 
-**特性**
+**Features**
 
-* 在首页也可以播放。点击原来的播放按钮就可以。可配置版本优先级（若视频多版本）。
-* 播放列表（连续播放）支持，下一集保持相同版本。
-* bgm.tv bangumi.tv simkl.com trakt.tv 单向标记已观看支持。
-* 本地挂载用户：可跳转到路径对应文件夹。（按钮在网页显示文件路径的上面）
-* 未适配的播放器一般也能用，只是不会回传进度。
-* 可在 qBittorrent WebUI 里直接播放或者跳转到路径对应挂载文件夹。
-  [配套脚本](https://greasyfork.org/zh-CN/scripts/450015-qbittorrent-webui-open-file)
-* 伪 • 聚合搜索。[配套脚本](https://github.com/kjtsune/embyToLocalPlayer/tree/main/embyEverywhere)
+* Playback also works from the home page. Just click the original play button. Version priority can be configured (when a video has multiple versions).
+* Playlist (continuous playback) is supported, and the next episode keeps the same version.
+* One-way watched-status sync is supported for bangumi.tv bgm.tv simkl.tv trakt.tv.
+* For users with local mounts: you can jump to the folder corresponding to the path. (The button is above the file path shown on the web page.)
+* Unsupported players will usually still work, they just will not report progress back.
+* You can play directly from qBittorrent WebUI or jump to the corresponding mounted folder.
+  [Companion script](https://greasyfork.org/zh-CN/scripts/450015-qbittorrent-webui-open-file)
+* Pseudo-aggregated search. [Companion script](https://github.com/kjtsune/embyToLocalPlayer/tree/main/embyEverywhere)
 
-**以下播放器支持回传进度**
+**The following players support progress reporting**
 
-* 没特殊要求的话，mpv 系的播放器综合体验较好。
-* mpv（纯快捷键）[Windows](https://sourceforge.net/projects/mpv-player-windows/files/64bit/) 。 macOS
-  解压后拖到应用程序即可 [macOS](https://laboratory.stolendata.net/~djinn/mpv_osx/)。
-  flatpak mpv [Linux](https://flathub.org/apps/io.mpv.Mpv)。
-* mpv.net（可鼠标）[发布页](https://github.com/stax76/mpv.net/releases)。 其他 mpv 内核的播放器一般也可以。
-* PotPlayer [发布页](https://potplayer.daum.net/)
-  若使用 http 播放，**可能提示地址关闭**， 解决方法在 FAQ。
-* MPC-HC [发布页](https://github.com/clsid2/mpc-hc/releases)
-* MPC-BE [发布页](https://sourceforge.net/projects/mpcbe/files/MPC-BE/Release%20builds/)
-* VLC [发布页](https://www.videolan.org/vlc/)
-* IINA（macOS）[发布页](https://iina.io/)
+* If you do not have special requirements, mpv-based players generally provide the best overall experience.
+* mpv (keyboard-driven) [Windows](https://sourceforge.net/projects/mpv-player-windows/files/64bit/) . macOS
+  just drag it into Applications after extracting [macOS](https://laboratory.stolendata.net/~djinn/mpv_osx/).
+  flatpak mpv [Linux](https://flathub.org/apps/io.mpv.Mpv).
+* mpv.net (mouse-friendly) [Release page](https://github.com/stax76/mpv.net/releases). Other players based on the mpv core usually work too.
+* PotPlayer [Release page](https://potplayer.daum.net/)
+  If using http playback, **it may say the address is closed**. The fix is in the FAQ.
+* MPC-HC [Release page](https://github.com/clsid2/mpc-hc/releases)
+* MPC-BE [Release page](https://sourceforge.net/projects/mpcbe/files/MPC-BE/Release%20builds/)
+* VLC [Release page](https://www.videolan.org/vlc/)
+* IINA (macOS) [Release page](https://iina.io/)
 
-### 使用说明
+### Usage
 
-> 基础配置
+> Basic setup
 
-1. 油猴插件，装一个即可：  
+1. Install one userscript extension, any one is enough:
    [Tampermonkey v3](https://chromewebstore.google.com/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo)
-   并启用开发者模式。[启用教程](https://www.tampermonkey.net/faq.php#Q209)  
+   and enable developer mode. [How to enable it](https://www.tampermonkey.net/faq.php#Q209)
    [Tampermonkey v2](https://chromewebstore.google.com/detail/lcmhijbkigalmkeommnijlpobloojgfn) |
    [Violentmonkey](https://chrome.google.com/webstore/detail/violent-monkey/jinjaccalgkegednnccohejagnlnfdag)
-   已知问题：新版 chrome 可能无法安装。
-2. 安装油猴脚本并刷新 Emby 页面。[发布页](https://greasyfork.org/zh-CN/scripts/448648-embytolocalplayer)
-3. 方案三选一，下载并解压 `.zip` 到任意英文路径。 [发布页](https://github.com/kjtsune/embyToLocalPlayer/releases)
-    * 推荐: `etlp-mpv-py-embed-win32.zip` (mpv 播放器 | Windows only | 快捷键见 FAQ)  
-      无需修改配置文件，查看下方 `.bat` 运行方法。
-    * `etlp-python-embed-win32.zip` (Windows only)  
-      修改配置文件：`embyToLocalPlayer_config.ini` 中的播放器路径，以及播放器选择。
-    * `embyToLocalPlayer.zip` (Windows / Linux / macOS)  
-      安装 Python (勾选 add to path) [官网](https://www.python.org/downloads/)  
-      修改配置文件：`embyToLocalPlayer_config.ini` 中的播放器路径，以及播放器选择。
+   Known issue: newer Chrome versions may fail to install it.
+2. Install the userscript and refresh the Emby page. [Release page](https://greasyfork.org/zh-CN/scripts/448648-embytolocalplayer)
+3. Choose one of these three options, download and extract the `.zip` to any English-only path. [Release page](https://github.com/kjtsune/embyToLocalPlayer/releases)
+    * Recommended: `etlp-mpv-py-embed-win32.zip` (mpv player | Windows only | see FAQ for shortcuts)
+      No config file changes are needed; see the `.bat` usage method below.
+    * `etlp-python-embed-win32.zip` (Windows only)
+      Edit the config file: set the player path and player selection in `embyToLocalPlayer_config.ini`.
+    * `embyToLocalPlayer.zip` (Windows / Linux / macOS)
+      Install Python (check add to path) [Official site](https://www.python.org/downloads/)
+      Edit the config file: set the player path and player selection in `embyToLocalPlayer_config.ini`.
 
-> 前置说明
+> Before you begin
 
-* 网页闪一下是自动关闭兼容流提示。
-* 播放器要退出触发回传进度。
-* 日志出现 `serving at 127.0.0.1:58000` 为服务启动成功。
-* **碰到问题先参考下方相关 FAQ，没按要求反馈会忽略**。
+* The webpage flashing briefly means it is automatically dismissing the compatible-stream prompt.
+* The player must exit to trigger progress reporting.
+* If the log shows `serving at 127.0.0.1:58000`, the service started successfully.
+* **If you run into issues, check the relevant FAQ below first. Reports that do not follow the required format will be ignored.**
 
 > Windows
 
-1. 双击 `embyToLocalPlayer_debug.bat`
-2. 若无报错，按 1（不要关闭窗口），然后网页播放测试。（点击原来的播放按钮就可以）
-3. 按 2 则创建开机启动项并后台运行。（隐藏窗口运行）
+1. Double-click `embyToLocalPlayer_debug.bat`
+2. If there is no error, press 1 (do not close the window), then test playback from the webpage. (Just click the original play button.)
+3. Press 2 to create a startup item and run it in the background. (Hidden window)
 
-* 问题排查：
-    * Pot 提示渲染 Pin 失败，无法播放。解决方法在 FAQ。
-    * 含 mpv 的版本若要修改为其他播放器，需要删除 `mpv_embed` 文件夹。
-    * 若双击 `.bat` 就提示找不到 Python，  
-      或者播放器无法播放，请使用包含 mpv 的便携版测试。
-    * 若自启失败，检查启动项是否被禁用：任务管理器 > 启动。  
-      `.bat` 按 3 查看开机文件夹里面`embyToLocalPlayer.vbs`是否被杀毒软件删了。  
-      若被删，可以自己创建 vbs，然后双击测试是否正常后台运行。 `.vbs` 模板:
+* Troubleshooting:
+    * If Pot shows Render Pin failed and cannot play, see the FAQ for the fix.
+    * If you want to switch an mpv-included package to another player, you need to delete the `mpv_embed` folder.
+    * If double-clicking the `.bat` says Python cannot be found,
+      or the player cannot play, please test with the portable package that includes mpv.
+    * If auto-start fails, check whether the startup item is disabled: Task Manager > Startup.
+      In `.bat`, press 3 to check whether `embyToLocalPlayer.vbs` in the startup folder was deleted by antivirus software.
+      If it was deleted, you can create the vbs file yourself, then double-click it to test whether it runs in the background correctly. `.vbs` template:
       ```
-      CreateObject("Wscript.Shell").Run """<Python所在文件夹>\python.exe"" ""<脚本所在文件夹>\embyToLocalPlayer.py""" , 0, True
+      CreateObject("Wscript.Shell").Run """<Python folder>\python.exe"" ""<Script folder>\embyToLocalPlayer.py""" , 0, True
       ```
-    * 若 bat 或者 vbs 有无法解决的问题，可尝试使用
-      [AutoHotkey 自启动解决方案](https://github.com/kjtsune/embyToLocalPlayer/issues/14#issuecomment-2430602205)。
-    * **反馈前看下方相关 FAQ，没按要求反馈会忽略**
+    * If you have an unsolved issue with bat or vbs, you can try the
+      [AutoHotkey auto-start solution](https://github.com/kjtsune/embyToLocalPlayer/issues/14#issuecomment-2430602205).
+    * **Read the relevant FAQ below before reporting. Reports that do not follow the required format will be ignored.**
 
-**FAQ 内容，以 GitHub 为准。**  
+**The FAQ on GitHub is the authoritative version.**
 https://github.com/kjtsune/embyToLocalPlayer#faq
 
 > macOS / Linux
@@ -85,31 +85,31 @@ https://github.com/kjtsune/embyToLocalPlayer#faq
 
 > macOS
 
-* macOS 目前没有环境测试，无法提供支持。
+* There is currently no tested environment for macOS, so support cannot be provided.
 
-1. 刚才保存的文件夹 > 右击 > 新建位于文件夹的终端窗口 `chmod +x *.command` 回车。
-2. 双击 `etlp_run.command`, 若无报错，可播放测试。
-3. 开机自启（无窗口运行）：
-    1. 方案一：直接进入下一步，但估计只适用于 Monterey 12 及之前的老版本系统。  
-       方案二：在终端使用 Homebrew 安装 screen。  
-       `brew install screen`  
-       如果你没有安装 Homebrew，请先安装 Homebrew。  
+1. In the folder you just saved, right-click > New Terminal at Folder, run `chmod +x *.command`, then press Enter.
+2. Double-click `etlp_run.command`. If there is no error, test playback.
+3. Enable auto-start at boot (run without a window):
+    1. Option 1: just continue to the next step, but this is probably only suitable for Monterey 12 and older systems.
+       Option 2: use Homebrew in Terminal to install screen.
+       `brew install screen`
+       If you do not have Homebrew installed, install Homebrew first.
        `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"`
-    2. 启动台 > 自动操作 > 文件 > 新建 > 应用程序 > 运行 Shell 脚本 >   
-       把 `etlp_run.command`（方案一）| `etlp_run_via_screen.command`（方案二） 文件拖入 >
-       点击运行后测试播放 > 文件 > 存储 > 取名并保存到应用程序。
-    3. 启动台 > 刚才的应用 > 双击后台运行后再次播放测试。
-    4. 系统偏好设置 > 用户与群组 > 登录项 > 添加刚才的应用。
-    5. 如果 Monterey 12.6.6 状态栏有齿轮，把文件拖入的操作替换成写以下内容，注意更改cd目录为你保存的目录。  
+    2. Launchpad > Automator > File > New > Application > Run Shell Script >
+       drag in `etlp_run.command` (option 1) | `etlp_run_via_screen.command` (option 2) >
+       click Run and test playback > File > Save > name it and save it to Applications.
+    3. Launchpad > the app you just created > double-click to run it in the background, then test playback again.
+    4. System Preferences > Users & Groups > Login Items > add the app you just created.
+    5. If Monterey 12.6.6 shows a gear icon in the status bar, replace the file-dragging step with the following content. Be sure to change the cd directory to the folder where you saved it.
        `cd ~/App/embyToLocalPlayer && nohup ./etlp_run.command > run.log 2&>1 &`
 
 > Linux
 
-1. `apt install python3-tk`（没报错不装也行）
-2. 添加 `etlp_run.command` 执行权限，并用终端打开。
-3. 正常播放后，加入开机启动项（无窗口运行）：
-    * 图形界面: Debian_Xfce：设置 > 会话和启动 > 应用程序自启动。
-    * systemd 服务自启参考。若失败请用图形界面的自启动。
+1. `apt install python3-tk` (if there is no error, you can also skip installing it)
+2. Add execute permission to `etlp_run.command`, then open it in Terminal.
+3. After playback works normally, add it to startup (run without a window):
+    * GUI: Debian_Xfce: Settings > Session and Startup > Application Autostart.
+    * For systemd service auto-start, see the reference below. If it fails, use the GUI auto-start method.
     <details>
     <summary>systemd service</summary>
 
@@ -122,13 +122,13 @@ https://github.com/kjtsune/embyToLocalPlayer#faq
     ExecStart=/root/etlp/etlp_run.command
     ExecStartPre=/bin/bash -c "until loginctl show-session $(loginctl | grep $USER | awk '{print $1}') -p Type | grep -q -e 'x11\|wayland'; do sleep 1; done; sleep 2"
     TimeoutStartSec=infinity
-    
+
     [Install]
     WantedBy=graphical-session.target
     ```
     </details>
 
-* 推荐使用较新版本的 mpv: flatpak mpv:
+* A newer mpv version is recommended: flatpak mpv:
     ```
     Flatpak: mpv config directory is ~/.var/app/io.mpv.Mpv/config/mpv
     Flatpak: mpv scripts directory is ~/.var/app/io.mpv.Mpv/config/mpv/scripts
@@ -139,168 +139,168 @@ https://github.com/kjtsune/embyToLocalPlayer#faq
 ### FAQ
 
 <details>
-<summary>通用 FAQ</summary>
+<summary>General FAQ</summary>
 
-> 通用说明
+> General notes
 
-* Python 最低支持版本为 3.8。Windows 最低支持版本为 10。
-* 有时浏览器与 Emby 之间的 ws 链接会断开，造成回传进度失败假象。等待看看或手动刷新一下页面。
-* 部分域名及 Plex 域名有 dns 污染，若无法播放，修改系统 DNS 或使用代理。
-* 反馈群组在频道置顶，提问前先把 FAQ 看一遍，并**按要求反馈**。不含敏感数据不私聊。  
-  小更新会频道提醒，不过应该也没什么更新的了，反馈不需要关注频道。[https://t.me/embyToLocalPlayer](https://t.me/embyToLocalPlayer)
+* The minimum supported Python version is 3.8. The minimum supported Windows version is 10.
+* Sometimes the ws connection between the browser and Emby disconnects, creating the false impression that progress reporting failed. Wait a bit or manually refresh the page.
+* Some domains, including Plex domains, may be affected by DNS pollution. If playback fails, change your system DNS or use a proxy.
+* The feedback group is pinned in the channel. Please read the FAQ first and **report issues as required**. Do not DM unless it contains no sensitive data.
+  Small updates will be announced in the channel, though there probably will not be many more. You do not need to follow the channel just to report issues. [https://t.me/embyToLocalPlayer](https://t.me/embyToLocalPlayer)
 
-> 如何切换模式
+> How to switch modes
 
-* 在 Emby 页面点击浏览器油猴插件图标，会有菜单可供点击切换。
-* 脚本在当前服务器：启用（默认）；禁用：当前域名不使用脚本。
-* 读取硬盘模式：关闭 > 调用本地播放器但使用服务器网络链接。（默认）
-* 读取硬盘模式：开启 > 调用本地播放器并转换服务器路径为本地文件地址。前提是本地有文件或挂载。  
-  在 `.ini` 里填好路径替换规则，服务端在本地则不用填。`.bat` 按 4 有辅助配置程序。  
-  出错可尝试设置：`dev` > `path_check = yes` 会检查文件是否存在，转换 NFC/NFD。兼容性更高，日志更清楚。（但会慢一点）  
-  如果还不行，反馈时，提供日志、配置文件、以及服务端媒体文件和客户端对应文件的完整路径。
-* 持久性缓存模式：只看配置文件，与油猴设置不冲突，不需要开启读取硬盘模式。
+* Click the userscript extension icon in the browser on the Emby page to open a menu where you can switch modes.
+* Script on this server: enabled (default); disabled: do not use the script on the current domain.
+* Disk-read mode: off > launch the local player but use the server's network link. (Default)
+* Disk-read mode: on > launch the local player and convert the server path to a local file path. This requires the file to exist locally or be mounted.
+  Fill in the path replacement rules in `.ini`. If the server is local, you do not need to set them. In `.bat`, press 4 for the helper setup tool.
+  If errors occur, you can try: `dev` > `path_check = yes`. It checks whether the file exists and converts NFC/NFD. Compatibility is better and logs are clearer. (But it will be a bit slower.)
+  If it still does not work, provide the log, config file, and the full paths of the media file on the server and the corresponding file on the client when reporting.
+* Persistent cache mode only depends on the config file and does not conflict with userscript settings. You do not need to enable disk-read mode.
 
-> 如何更新
+> How to update
 
-1. Windows: `.bat` 按 6  
-   Linux / macOS：在 `.ini` 所在的文件夹打开终端，运行 `python3 utils/update.py`
-2. 查看新旧配置的差异字段。`embyToLocalPlayer_diff.ini`
+1. Windows: press 6 in `.bat`
+   Linux / macOS: open Terminal in the folder containing `.ini`, then run `python3 utils/update.py`
+2. Check the differing fields between the new and old config. `embyToLocalPlayer_diff.ini`
 
-* 油猴脚本有时也要更新。
+* The userscript sometimes also needs to be updated.
 
-> 如何反馈
+> How to report issues
 
-* **没按要求反馈会忽略。**
+* **Reports that do not follow the required format will be ignored.**
 
-1. 参考 `如何更新` ，更新到最新版后测试。   
-   `Windows 用户换含 mpv 的便携版测试，并告知是否正常。`
-2. 运行 `debug.bat` 选 1。  
-   `macOS 或 Linux 运行 etlp_run.command 来代替。`
-3. 至少测试两个不同电影/节目的视频。
-4. 截图或复制 `.bat`/`.command` 窗口中的日志。  
-   `选中后回车即复制，日志需要包含启动后到出现问题的部分。或者直接提供文件夹下的
-   log.txt`
-5. 说明碰到什么问题及怎么复现。
-6. [可选] 关闭模糊日志。 `.ini` > `[dev]` > `mix_log = no`
-7. 若调用失败（仍在浏览器里播放，或点击播放后 `.bat` 没有新增日志），反馈时提供在 Emby 页面点击浏览器油猴插件图标后的截图。
-8. 其他油猴脚本的问题，提供浏览器刷新页面后的截图、浏览器控制台完整日志，相关配置信息（如果有）。
+1. Follow `How to update`, update to the latest version, then test again.
+   `Windows users should test with the portable package that includes mpv and state whether it works normally.`
+2. Run `debug.bat` and choose 1.
+   `On macOS or Linux, run etlp_run.command instead.`
+3. Test at least two videos from different movies/shows.
+4. Screenshot or copy the log from the `.bat`/`.command` window.
+   `After selecting text, press Enter to copy it. The log must include the part from startup to the point where the issue occurs. Or just provide
+   log.txt from the folder directly.`
+5. Explain what issue you encountered and how to reproduce it.
+6. [Optional] Disable fuzzy logging. `.ini` > `[dev]` > `mix_log = no`
+7. If launching fails (it still plays in the browser, or clicking Play adds no new log to `.bat`), include a screenshot of what appears after clicking the userscript extension icon on the Emby page.
+8. For issues with other userscripts, provide a screenshot after refreshing the page, the full browser console log, and relevant configuration info (if any).
 
-> 字幕/音轨相关
+> Subtitle / audio track related
 
-* Emby 里字幕/音轨选择无效。  
-  外挂字幕/音轨选择有效，内置字幕会被忽略，由播放器选择。  
-  视频文件的内置字幕当作外挂字幕处理会导致播放器语言设置失效。（外挂字幕最优先）  
-  正常播放器都可以设置语言优先顺序。
+* Subtitle/audio-track selection inside Emby is ineffective.
+  External subtitle/audio-track selection works, while embedded subtitles are ignored and selected by the player instead.
+  Treating embedded subtitles in the video file as external subtitles will cause the player's language settings to stop working. (External subtitles have highest priority.)
+  Normal players can all set language priority order.
 
-> 剧集播放列表（连续播放|多集回传）相关
+> Episode playlist (continuous playback | multi-episode progress reporting) related
 
-* 默认已启用，可在配置文件里 `[playlist]` 中修改。
-* 建议不要禁用，大部分功能与播放列表绑定，禁用会缺失一些功能。
-* 播放列表添加完成前最好不退出（大部分没事）
-* 特别说明：若是 Emby/Jellyfin 网页上的 全部播放/随机播放/播放列表 ，仅支持电影和音乐视频类型。
+* Enabled by default; you can change it in `[playlist]` in the config file.
+* It is recommended not to disable it. Most features are tied to playlists, and disabling it will remove some functionality.
+* It is best not to quit before playlist addition is finished (usually nothing happens, but still recommended).
+* Special note: if you use Play All / Shuffle / Playlist on the Emby/Jellyfin web page, only movie and music video types are supported.
 
 * Windows:
 
     * mpv:
     * mpv.net:
     * vlc:
-    * mpc: be: 播放列表条目超过10个可能会卡住，hc 没这问题。
-    * pot: 若日志显示`KeyError: 'stream.mkv'`，看下方 FAQ。  
-      pot: 下一集无法添加 http 外挂字幕时，会禁用播放列表。  
-      pot: 读盘模式可能和美化标题和混合S0的功能冲突，不过不影响使用。
+    * mpc: be: if the playlist has more than 10 entries, it may stutter; hc does not have this problem.
+    * pot: if the log shows `KeyError: 'stream.mkv'`, see the FAQ below.
+      pot: if the next episode cannot add external http subtitles, the playlist will be disabled.
+      pot: disk-read mode may conflict with title beautification and mixed S0, but it does not affect normal use.
 
 * macOS
 
     * mpv:
-    * iina: 仅读盘模式支持并可回传
-    * vlc: 下一集无法添加 http 外挂字幕时，会禁用播放列表。
+    * iina: only disk-read mode is supported, and it can report progress back
+    * vlc: if the next episode cannot add external http subtitles, the playlist will be disabled.
 
 * Linux
 
     * mpv:
-    * vlc: 下一集无法添加 http 外挂字幕时，会禁用播放列表。
+    * vlc: if the next episode cannot add external http subtitles, the playlist will be disabled.
 
 </details>
 
 <details>
-<summary>播放器相关</summary>
+<summary>Player-related</summary>
 
 > mpv
 
 <details>
 <summary>mpv</summary>
 
-* 若碰到问题，换含 mpv 的便携版测试。
-* 还不行就换视频或者软解（`mpv.conf`只保留`log-file` 选项）并检查 mpv 日志。  
-  `mpv_embed` > `portable_config` > `mpv_log.txt`  
+* If you run into problems, test with the portable package that includes mpv.
+* If it still does not work, try another video or software decoding (`mpv.conf` should keep only the `log-file` option), then check the mpv log.
+  `mpv_embed` > `portable_config` > `mpv_log.txt`
   `mpv.conf` > `log-file = <save path>`
-* 弹幕插件推荐：  
-  https://github.com/Tony15246/uosc_danmaku  
+* Recommended danmaku plugins:
+  https://github.com/Tony15246/uosc_danmaku
   https://github.com/Kosette/danmaku
 
 > mpv_embed
 
-* `mpv.conf` 是我个人使用的简易配置。
-* 相较原版 mpv，只修改了少部分快捷键和配置。
-* 想更新版本可点击 `mpv_embed` > `updater.bat`
+* `mpv.conf` is a simple config I use personally.
+* Compared with the original mpv, only a small number of shortcuts and settings were changed.
+* To update the version, click `mpv_embed` > `updater.bat`
 
-> mpv_embed 快捷键
+> mpv_embed shortcuts
 
 <details>
-<summary>mpv_embed 快捷键</summary>
+<summary>mpv_embed shortcuts</summary>
 
-* 中文文档 [https://hooke007.github.io/official_man/mpv.html#id4](https://hooke007.github.io/official_man/mpv.html#id4)
-* 英文文档 [https://mpv.io/manual/master/#keyboard-control](https://mpv.io/manual/master/#keyboard-control)
-* 文件位置：`mpv_embed` > `portable_config` > `input.conf`
+* Chinese docs [https://hooke007.github.io/official_man/mpv.html#id4](https://hooke007.github.io/official_man/mpv.html#id4)
+* English docs [https://mpv.io/manual/master/#keyboard-control](https://mpv.io/manual/master/#keyboard-control)
+* File location: `mpv_embed` > `portable_config` > `input.conf`
 
     ```
-    ## 中文文档 https://hooke007.github.io/official_man/mpv.html#id4
-    ## 中文文档 https://hooke007.github.io/official_man/mpv.html#input-conf
-    ## 英文文档 https://mpv.io/manual/master/#keyboard-control
-    ## 默认按键 https://github.com/mpv-player/mpv/blob/master/etc/input.conf
-    
-    ## 鼠标中键可以点击界面 OSD 按钮，会显示播放列表，字幕列表，音轨列表等的。
-    
-    
-    MBTN_LEFT            ignore                       # <无操作> [左键-单击]
-    MBTN_LEFT_DBL        cycle fullscreen             # 切换 全屏状态 [左键-双击]
-    MBTN_RIGHT           cycle pause                  # 切换 暂停状态 [右键-单击]
-    MBTN_RIGHT_DBL       quit                         # 关闭MPV程序 [右键-双击]
-    WHEEL_UP             add volume  10               # 音量 + 10 [滚轮-向上]
-    WHEEL_DOWN           add volume -10               # 音量 - 10 [滚轮-向下]
-    
-    MBTN_MID             cycle fullscreen             # 切换 全屏状态 [中键（按压滚轮）]
-    f                    cycle fullscreen             # 切换 全屏状态
-    ENTER                cycle fullscreen             # 切换 全屏状态 [回车键]
-    
-    LEFT                 seek -5                      # 后退05秒 [方向左键]
-    RIGHT                seek  5                      # 前进05秒 [方向右键]
-    UP                   seek  40                     # 后退40秒 [方向上键]
-    DOWN                 seek -40                     # 前进40秒 [方向下键]
-    .                    frame-step                   # 下一帧
-    ,                    frame-back-step              # 上一帧
-    
-    [                    add speed -0.1               # 播放速度 -（最小0.01）
-    ]                    add speed  0.1               # 播放速度 +（最大100）
-    {                    multiply speed 0.5           # 播放速度 半减
-    }                    multiply speed 2.0           # 播放速度 倍增
-    
-    ;                    add chapter -1               # 章节 - (Page Down 也可以)
-    '                    add chapter  1               # 章节 + (Page Up 也可以)
-    q                    quit-watch-later             # 关闭MPV程序 稍后观看（保存当前文件状态）
-    Q                    quit                         # 关闭MPV程序
-    
-    z                    add sub-delay -0.1           # 字幕同步 预载100ms
-    Z                    add sub-delay -1             # 字幕同步 预载1000ms
-    x                    add sub-delay +0.1           # 字幕同步 延迟100ms
-    X                    add sub-delay +1             # 字幕同步 延迟1000ms
-    
-    i                    script-binding stats/display-stats           # 临时显示统计信息（此时12340翻页，2/4/0页可方向上下键滚动查看）
-    I                    script-binding stats/display-stats-toggle    # 开/关 常驻显示统计信息
-    TAB                  script-binding stats/display-stats-toggle    # 开/关 常驻显示统计信息
-    `                    script-binding console/enable                # 进入控制台（此时Esc退出）
-    DEL                  script-binding osc/visibility                # 切换 内置OSC的可见性
-    r                    cycle_values video-rotate 90 180 270 0       # 旋转屏幕方向
+    ## Chinese docs https://hooke007.github.io/official_man/mpv.html#id4
+    ## Chinese docs https://hooke007.github.io/official_man/mpv.html#input-conf
+    ## English docs https://mpv.io/manual/master/#keyboard-control
+    ## Default keys https://github.com/mpv-player/mpv/blob/master/etc/input.conf
+
+    ## The middle mouse button can click OSD buttons on the interface, showing the playlist, subtitle list, audio track list, etc.
+
+
+    MBTN_LEFT            ignore                       # <No action> [Left click]
+    MBTN_LEFT_DBL        cycle fullscreen             # Toggle fullscreen [Double left click]
+    MBTN_RIGHT           cycle pause                  # Toggle pause [Right click]
+    MBTN_RIGHT_DBL       quit                         # Close MPV [Double right click]
+    WHEEL_UP             add volume  10               # Volume + 10 [Wheel up]
+    WHEEL_DOWN           add volume -10               # Volume - 10 [Wheel down]
+
+    MBTN_MID             cycle fullscreen             # Toggle fullscreen [Middle button (press wheel)]
+    f                    cycle fullscreen             # Toggle fullscreen
+    ENTER                cycle fullscreen             # Toggle fullscreen [Enter]
+
+    LEFT                 seek -5                      # Backward 05 seconds [Left arrow]
+    RIGHT                seek  5                      # Forward 05 seconds [Right arrow]
+    UP                   seek  40                     # Backward 40 seconds [Up arrow]
+    DOWN                 seek -40                     # Forward 40 seconds [Down arrow]
+    .                    frame-step                   # Next frame
+    ,                    frame-back-step              # Previous frame
+
+    [                    add speed -0.1               # Playback speed - (minimum 0.01)
+    ]                    add speed  0.1               # Playback speed + (maximum 100)
+    {                    multiply speed 0.5           # Halve playback speed
+    }                    multiply speed 2.0           # Double playback speed
+
+    ;                    add chapter -1               # Chapter - (Page Down also works)
+    '                    add chapter  1               # Chapter + (Page Up also works)
+    q                    quit-watch-later             # Close MPV and save watch-later state (save current file state)
+    Q                    quit                         # Close MPV
+
+    z                    add sub-delay -0.1           # Subtitle sync advance 100ms
+    Z                    add sub-delay -1             # Subtitle sync advance 1000ms
+    x                    add sub-delay +0.1           # Subtitle sync delay 100ms
+    X                    add sub-delay +1             # Subtitle sync delay 1000ms
+
+    i                    script-binding stats/display-stats           # Temporarily show stats (while shown, 12340 switches pages; pages 2/4/0 can be scrolled with up/down)
+    I                    script-binding stats/display-stats-toggle    # Toggle persistent stats display on/off
+    TAB                  script-binding stats/display-stats-toggle    # Toggle persistent stats display on/off
+    `                    script-binding console/enable                # Enter console (press Esc to exit)
+    DEL                  script-binding osc/visibility                # Toggle built-in OSC visibility
+    r                    cycle_values video-rotate 90 180 270 0       # Rotate screen orientation
      ```
 
 </details>
@@ -308,8 +308,8 @@ https://github.com/kjtsune/embyToLocalPlayer#faq
 
 > mpv.net
 
-* 设置播放完自动关闭。不加载下个文件。（方便触发回传进度，`.ini`配置有播放列表选项）  
-  右击 > Settings > Playback > idle:no, auto-load-folder:no （大概是这样
+* Set it to close automatically after playback. Do not load the next file. (This makes it easier to trigger progress reporting; `.ini` has playlist-related options.)
+  Right click > Settings > Playback > idle:no, auto-load-folder:no (roughly like this)
 
 </details>
 
@@ -318,519 +318,519 @@ https://github.com/kjtsune/embyToLocalPlayer#faq
 <details>
 <summary>PotPlayer</summary>
 
-* 提示 `渲染 Pin 失败` 无法播放。或者日志提示 `KeyError: 'stream.mkv'`  
-  或者 `pot stop, stop_sec=None` 或者 `请求的操作需要提升` 解决方案：  
-  按以下依次修改，每次修改后尝试播放，还不行就无解，欢迎 PR。
-    1. 初始化 PotPlayer 设置。
-    2. 换 Pot 为 20240618 版本。
-    3. 换 Pot 为 最新版本 版本。
-    4. 本地用户查看`通用 FAQ` > `如何切换模式` 使用读盘模式。
-    5. 换 mpv 测试此否正常播放。
-       240618 版本下载链接。  
+* If it shows `Render Pin failed` and cannot play, or the log shows `KeyError: 'stream.mkv'`
+  or `pot stop, stop_sec=None` or `The requested operation requires elevation`, try the following solutions:
+  Make the following changes in order. After each change, test playback again. If it still does not work, there may be no solution yet; PRs are welcome.
+    1. Reset PotPlayer settings.
+    2. Switch Pot to version 20240618.
+    3. Switch Pot to the latest version.
+    4. Local users should see `General FAQ` > `How to switch modes` and use disk-read mode.
+    5. Test with mpv to see whether playback works normally.
+       Download link for version 240618.
        [potplayer-1-7-22286.exe (v240618)](https://potplayer.en.uptodown.com/windows/download/1018490678)
        | [Scoop](https://github.com/ScoopInstaller/Extras/blob/108f0c0d42347a1cb9a16d8effdad09a7059c22b/bucket/potplayer.json#L11-L12)
-       | [winget](https://github.com/microsoft/winget-pkgs/blob/d7aa02cfe97624c51a005b3c7ac42f05f205aff5/manifests/d/Daum/PotPlayer/240618/Daum.PotPlayer.installer.yaml#L84-L85)  
+       | [winget](https://github.com/microsoft/winget-pkgs/blob/d7aa02cfe97624c51a005b3c7ac42f05f205aff5/manifests/d/Daum/PotPlayer/240618/Daum.PotPlayer.installer.yaml#L84-L85)
        sha256sum `66d03fc13f4949948890675cf62b839b704b542a34a13a180466f93be20d5bc6`
 
-* 本地用户可考虑：[MPC-HC](https://github.com/clsid2/mpc-hc/releases) 自带 LAV，同样支持 madVR MPCVR BFRC 等。  
-  网络用户或没有特殊需求的话，mpv 系的播放器综合体验较好。
-* [可选] 选项 > 播放 > 播放窗口尺寸：全屏
-* 配置/语言/其他 > 收尾处理 > 播放完当前后退出（触发回传进度）
-* 若使用 http 播放，可能提示地址关闭。Win8 32bit 碰到。  
-  解决方案：本地用户使用读盘模式，或者换 pot 便携版。  
-  安全性未知：[PotPlayerPortable-220914.zip](https://www.videohelp.com/download/PotPlayerPortable-220914.zip)  
-  先打开 `PotPlayerPortable.exe` 一次，但播放用 `C:\<path_to>\PotPlayerPortable\App\PotPlayer\PotPlayer.exe`  
-  不然会要求管理员权限运行。
-* 读盘模式可能和美化标题和混合S0的功能冲突，不过不影响使用。（FAQ > 隐藏功能 有解决方案）
+* Local users may consider [MPC-HC](https://github.com/clsid2/mpc-hc/releases), which includes LAV and also supports madVR, MPCVR, BFRC, etc.
+  For network users or users without special needs, mpv-based players generally offer the best overall experience.
+* [Optional] Options > Playback > Playback window size: Fullscreen
+* Preferences / Language / Miscellaneous > After Playback > Exit after current playback (to trigger progress reporting)
+* If using http playback, it may say the address is closed. Seen on Win8 32bit.
+  Solution: local users should use disk-read mode, or switch to the portable pot package.
+  Security unknown: [PotPlayerPortable-220914.zip](https://www.videohelp.com/download/PotPlayerPortable-220914.zip)
+  Launch `PotPlayerPortable.exe` once first, but use `C:\<path_to>\PotPlayerPortable\App\PotPlayer\PotPlayer.exe` for playback
+  otherwise it will require running as administrator.
+* Disk-read mode may conflict with title beautification and mixed S0, but it does not affect normal use. (There is a solution under FAQ > Hidden features.)
 
 </details>
 
-> 其他播放器
+> Other players
 
 <details>
-<summary>其他播放器</summary>
+<summary>Other players</summary>
 
 > MPC：
 
-* 会自动开启 WebUI，系统防火墙提示的时候可以拒绝（不影响使用）。
-* 会自动开启 WebUI，建议仅允许从 localhost 访问： 查看 > 选项 > Web 界面：  
-  打勾 仅允许从 localhost 访问
-* MPC 播放 http 具有加载和拖动慢，视频总时长可能有误的缺点。  
-  以及点击关闭播放器后，进程可能残留在后台。
-* MPC 播放 http 无外挂字幕：  
-  MPC-HC 设置 > 回放 > 输出 > 字幕渲染器 > 内部字幕渲染器  
-  MPC-BE 设置 > 字幕 > 字幕渲染器 > 内部字幕渲染器
+* WebUI will be enabled automatically. When the system firewall prompts you, you can deny it (it will not affect usage).
+* WebUI will be enabled automatically. It is recommended to allow access only from localhost: View > Options > Web Interface:
+  check Allow access only from localhost
+* When MPC plays http, loading and seeking can be slow, and the total video duration may be inaccurate.
+  Also, after you click to close the player, the process may remain in the background.
+* No external subtitles when MPC plays http:
+  MPC-HC Settings > Playback > Output > Subtitle Renderer > Internal Subtitle Renderer
+  MPC-BE Settings > Subtitles > Subtitle Renderer > Internal Subtitle Renderer
 
 > IINA
 
-* 播放完不完全退出会影响进度回传和静态管道名称配置。  
-  解决方法：`设置` > `通用`  
-  启用 `没有打开的窗口时退出`  
-  禁用 `播放完成后保存窗口打开`
-* 非读盘模式不支持播放列表。
+* If it does not fully exit after playback, it will affect progress reporting and static pipe-name configuration.
+  Fix: `Settings` > `General`
+  Enable `Quit when all windows are closed`
+  Disable `Keep window open after playback ends`
+* Playlists are not supported in non-disk-read mode.
 
 </details>
 </details>
 
 <details>
-<summary>bgm.tv / simkl / trakt.tv 存储记录</summary>
+<summary>bgm.tv / simkl / trakt.tv watch-record storage</summary>
 
-### bgm.tv / simkl / trakt.tv 存储记录
+### bgm.tv / simkl / trakt.tv watch-record storage
 
-> 通用 FAQ
+> General FAQ
 
-* Clash for Windows 用户：
-    * 日志报错：`SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:1129)'))`
-    * 解决方案：Clash > Settings > System Proxy > Specify Protocol > 启用。
+* Clash for Windows users:
+    * If the log shows: `SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:1129)'))`
+    * Solution: Clash > Settings > System Proxy > Specify Protocol > enable.
 
-* 使用含 Python 的便携版用户无需安装依赖。其他用户需要安装：命令行终端运行，安装失败尝试在启用或禁用代理的环境来安装：  
-  `python -m pip install requests`  
-  或者：  
+* Users of the portable package that includes Python do not need to install dependencies. Other users need to install them: run the following in a command-line terminal. If installation fails, try again with proxy enabled or disabled:
+  `python -m pip install requests`
+  or:
   `python -m pip install requests -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com`
 
-> bangumi.tv（bgm.tv） 单向同步（点格子）
+> bangumi.tv (bgm.tv) one-way sync (mark grid)
 
-* 缺点：
-    1. 只能往 Bangumi 单向同步。
-    2. 只在播放器正常关闭后，同步播放器已播放的（网页点击已播放不触发）。
-    3. 只支持常规剧集，不支持剧场版等。
-* 使用说明：
-    1. 访问并创建令牌 [https://next.bgm.tv/demo/access-token](https://next.bgm.tv/demo/access-token)：   
-       复制令牌到 ini 配置文件 `[bangumi]` 部分，` access_token = ` 里
-    2. ini 配置文件 `[bangumi]` 填写 `enable_host` `user_name` 这两项。
-    3. 启动脚本，播放一集动漫，拖到最后，关闭播放器。看日志是否同步成功。
-* 常见问题：
-    1. 8季或者300集以上的条目暂不支持。同时最多查找10次续集。
-    2. 日志提示 `Unauthorized` 一般是令牌过期或者没填对，Windows 会自动弹出令牌生成页面。
-  3. 集上映日期匹配方案：在常规搜索失败后采用，此时无视季和集数对应，只要 Emby bgm 集上映日期相差两天(含)内就匹配成功。
-  4. 由于 `bgm.tv` 的 `续集` 不一定是下一季，导致第几季可能关联错误（经下面处理后概率低）。  
-       目前把 `续集` 里：集数大于3，同时第一集的序号小于2的 `续集` 当作下一季的开始。  
-       且只保留类型为 TV 的续集（`类型在标题右侧灰字`），跳过类型为 OVA 剧场版 WEB 等的。  
-       例外：如果第一季是 WEB，则续集不会跳过 WEB。  
-       如果同步的集序号小于12（不会是分批次放送），还会核查 Emby 里的季上映时间（一般是 TMDb 的时间）与 bgm.tv
-       的上映时间相差是否超过15天，来保证准确性。  
-       Plex 是核查集上映时间与 bgm.tv 的季上映时间相差是否超过180天，来保证准确性。  
-       如果还有其他特殊情况，可以反馈。
-* 使用命令行将在看列表的已完成条目标记为已观看。
-    1. 在 etlp 所在文件夹打开命令行。
-    2. 便携版用户运行：`./python_embed/python.exe ./utils/bangumi_sync.py mark_played`
-    3. 其他用户运行：`python utils/bangumi_sync.py mark_played`
+* Drawbacks:
+    1. Sync is one-way to Bangumi only.
+    2. It only syncs what the player has played after the player closes normally (clicking watched on the webpage does not trigger it).
+    3. Only regular TV episodes are supported, not movies, theatrical releases, etc.
+* Instructions:
+    1. Visit and create a token at [https://next.bgm.tv/demo/access-token](https://next.bgm.tv/demo/access-token):
+       copy the token into ` access_token = ` under the `[bangumi]` section of the ini config file
+    2. In the `[bangumi]` section of the ini config file, fill in `enable_host` and `user_name`.
+    3. Start the script, play one anime episode, drag to the end, close the player, and check whether the log shows a successful sync.
+* Common issues:
+    1. Entries with 8 seasons or more, or more than 300 episodes, are not supported for now. At most 10 sequels are looked up.
+    2. If the log shows `Unauthorized`, the token has usually expired or was entered incorrectly. On Windows, the token generation page will open automatically.
+  3. Episode air-date matching rule: this is used when regular search fails. In this mode, season and episode numbering are ignored; matching succeeds as long as the Emby and bgm episode air dates differ by no more than two days (inclusive).
+  4. Because `bgm.tv` `sequel` does not always mean the next season, season matching can be wrong (though after the handling below, the probability is low).
+       Currently, among `sequel` entries, a `sequel` is treated as the start of the next season if it has more than 3 episodes and the first episode number is less than 2.
+       Only sequels whose type is TV are kept (`the type is shown in gray text to the right of the title`), while OVA, theatrical, WEB, etc. are skipped.
+       Exception: if season 1 is WEB, WEB sequels will not be skipped.
+       If the synced episode number is below 12 (so it is not a split-cour broadcast), it will also check whether the season air date in Emby (usually the TMDb date) and the air date on bgm.tv
+       differ by more than 15 days, to ensure accuracy.
+       For Plex, it checks whether the episode air date and the bgm.tv season air date differ by more than 180 days, to ensure accuracy.
+       If there are still other special cases, you can report them.
+* Use the command line to mark completed entries in the watching list as watched.
+    1. Open a command line in the etlp folder.
+    2. Portable-package users run: `./python_embed/python.exe ./utils/bangumi_sync.py mark_played`
+    3. Other users run: `python utils/bangumi_sync.py mark_played`
 
-> simkl 单向同步
+> simkl one-way sync
 
-* 缺点：
-    1. 只能往 simkl 单向同步。
-    2. 只在播放器正常关闭后，同步播放器已播放的（网页点击已播放不触发）。
-    3. 配置和使用都麻烦。
-* 使用说明：
-    1. [点击访问：simkl dev 页面](https://simkl.com/settings/developer/)：   
-       创建 app，名字任意，Redirect uri 填写: `http://localhost:58000/simkl_auth` ，然后保存。  
-       已创建的 app 在 dev 页面底部能看到。
-    2. ini 配置文件`[simkl]` 填写 `enable_host` `client_id` `client_secret` 这三项。
-    3. 启动脚本，会自动跳验证页面。点击 Yes 按钮，稍等后，网页会显示 `etlp: simkl auth success`。  
-       etlp 目录下会自动生成 `simkl_token.json`
-    4. 播放一个视频，拖到最后，关闭播放器。看日志是否同步成功。
-* 其他问题：
-    1. 若想用 emby 本身的 simkl 插件，需要开启实时回传，插件有30秒全局限流。暂不考虑适配支持。
+* Drawbacks:
+    1. Sync is one-way to simkl only.
+    2. It only syncs what the player has played after the player closes normally (clicking watched on the webpage does not trigger it).
+    3. Configuration and usage are both cumbersome.
+* Instructions:
+    1. [Click here to visit the simkl dev page](https://simkl.com/settings/developer/)：
+       create an app, choose any name, set Redirect uri to `http://localhost:58000/simkl_auth`, then save it.
+       Created apps can be seen at the bottom of the dev page.
+    2. In the `[simkl]` section of the ini config file, fill in `enable_host`, `client_id`, and `client_secret`.
+    3. Start the script. The verification page will open automatically. Click the Yes button. After a short wait, the webpage will display `etlp: simkl auth success`.
+       `simkl_token.json` will be generated automatically in the etlp directory
+    4. Play a video, drag to the end, close the player, and check whether the log shows a successful sync.
+* Other issues:
+    1. If you want to use Emby's built-in simkl plugin, real-time reporting must be enabled, and that plugin has a global 30-second rate limit. Supporting it is not planned for now.
 
-> trakt.tv 单向同步
+> trakt.tv one-way sync
 
-* 缺点：
-    1. 媒体服务器一般本身就有 Trakt 插件。
-    2. 只能往 Trakt 单向同步。
-    3. 只在播放器正常关闭后，同步播放器已播放的（网页点击已播放不触发）。
-    4. 配置和使用都麻烦。
-* 使用说明：
-    1. [点击访问：Trakt app 管理页面](https://trakt.tv/oauth/applications)：   
-       创建 app，名字任意，Redirect uri 填写: `http://localhost:58000/trakt_auth` ，然后保存。
-    2. ini 配置文件`[trakt]` 填写 `enable_host` `user_name` `client_id` `client_secret` 这四项。
-    3. 启动脚本，会自动跳验证页面。或者自行点击 app 详情页面的 `Authorize`
-       按钮，二次同意后，网页会显示 `etlp: trakt auth success`。etlp 目录下会自动生成 `trakt_token.json`
-    4. 播放一个视频，拖到最后，关闭播放器。看日志是否同步成功。
-* 常见问题：
-    1. 若同步失败。电影看是否缺失IMDb，剧集看单集下方是否有 IMDb 或 TheTVDB。
+* Drawbacks:
+    1. Media servers usually already have a Trakt plugin.
+    2. Sync is one-way to Trakt only.
+    3. It only syncs what the player has played after the player closes normally (clicking watched on the webpage does not trigger it).
+    4. Configuration and usage are both cumbersome.
+* Instructions:
+    1. [Click here to visit the Trakt app management page](https://trakt.tv/oauth/applications)：
+       create an app, choose any name, set Redirect uri to `http://localhost:58000/trakt_auth`, then save it.
+    2. In the `[trakt]` section of the ini config file, fill in `enable_host`, `user_name`, `client_id`, and `client_secret`.
+    3. Start the script. The verification page will open automatically. Or click the `Authorize`
+       button on the app details page yourself. After granting consent again, the webpage will display `etlp: trakt auth success`. `trakt_token.json` will be generated automatically in the etlp directory
+    4. Play a video, drag to the end, close the player, and check whether the log shows a successful sync.
+* Common issues:
+    1. If sync fails: for movies, check whether IMDb is missing; for shows, check whether each episode has IMDb or TheTVDB listed underneath.
 
 </details>
 
 <details>
-<summary>其他</summary>
+<summary>Other</summary>
 
-### 其他:
+### Other:
 
-> Jellyfin 相关
+> Jellyfin-related
 
-* 首页播放结束后，10秒内重复播放**同文件**，本地播放器收到的播放时间会有误。    
-  解决方法：
-    1. 进详情后再播放没这问题；~~说明不是我的锅~~
-    2. 等待10秒后再继续播放；
-    3. 手动刷新页面后播放；
-    4. ~~告诉我要发送什么请求可以解决这个问题~~
-* 未适配主题曲功能，会有无法二次播放的问题。
+* After playback on the home page ends, if you replay the **same file** within 10 seconds, the playback time received by the local player will be incorrect.
+  Solutions:
+    1. This does not happen if you enter the details page before playing; ~~so it is not my fault~~
+    2. Wait 10 seconds before playing again;
+    3. Refresh the page manually before playing;
+    4. ~~Tell me what request I need to send to fix this~~
+* Theme-song functionality is not supported yet, so replaying may fail.
 
-> Plex 相关
+> Plex-related
 
-* 可能 dns 污染，若无法播放。修改系统 DNS 或使用代理。
+* Possible DNS pollution. If playback fails, change the system DNS or use a proxy.
 
-> 感谢
+> Thanks
 
 * [iwalton3/python-mpv-jsonipc](https://github.com/iwalton3/python-mpv-jsonipc)
 
 </details>
 
 <details>
-<summary>隐藏功能（一般用不到 / 配置麻烦 / 无支持）</summary>
+<summary>Hidden features (generally unnecessary / troublesome to configure / unsupported)</summary>
 
-### 隐藏功能（无支持）:
+### Hidden features (unsupported):
 
 <details>
-<summary>iso 原盘 bdmv 相关</summary>
+<summary>iso / original disc / bdmv related</summary>
 
-> iso 原盘 bdmv 相关
+> iso / original disc / bdmv related
 
-* 推荐使用 vlc 支持菜单展示，支持网络流。
-* Pot mpv 也可以播放 iso bdmv，但需要读盘模式，即路径转换和本地文件挂载。
-* strm 内需要填路径，然后启用 strm 直接播放和读盘模式。
-* iso 不支持回传进度。
-* `player_by_path =  vlc: __bdmv, .iso` 配置文件里的这个设置项可以仅播放原盘的时候用 vlc。
+* VLC is recommended because it supports menu display and network streams.
+* Pot and mpv can also play iso bdmv, but they require disk-read mode, meaning path conversion and local file mounting.
+* The path needs to be filled in inside strm, then enable strm direct play and disk-read mode.
+* iso does not support progress reporting.
+* The config option `player_by_path =  vlc: __bdmv, .iso` can be used so VLC is only used when playing original disc sources.
 
 </details>
 
 <details>
-<summary>本地 重定向/替换 播放地址</summary>
+<summary>Local redirect / replace playback URL</summary>
 
-> 本地 重定向/替换 播放网址
+> Local redirect / replace playback URL
 
-* 本地替换播放网址，减少网络重定向，加速访问。
-* alist strm 用户替换 alist 服务地址：解决网盘不支持302时，在外播放受 nas 上传速度限制。  
-  此时需要填写 `strm_direct_host` 及本机运行 alist。注意要带端口，不然会变成替换 emby 的服务器地址。
-* 使用预读取下一集的用户：nginx 可以只反代视频流。浏览器访问源站，重定向视频流交给本机。降低 nginx 配置难度。减少 bug。
-* 填写位置：`.ini` > `[dev]`
+* Replace playback URLs locally to reduce network redirects and speed up access.
+* For alist strm users, replace the alist service address: this solves the issue where cloud storage does not support 302, causing external playback to be limited by the NAS upload speed.
+  In this case, you need to fill in `strm_direct_host` and run alist locally. Be sure to include the port, otherwise it will end up replacing the emby server address.
+* For users of prefetch next episode: nginx can reverse-proxy only the video stream. Access the origin site in the browser, and redirect the video stream to the local machine. This reduces nginx configuration complexity and bugs.
+* Fill in at: `.ini` > `[dev]`
   ```
-  # 网址之间逗号隔开，成对填写。原始网址, 新网址。
+  # Separate URLs with commas, and fill them in pairs. Original URL, new URL.
   stream_redirect = http://src.src.com, http://reverse.proxy.com, http://192.168.1.1:5244, http://127.0.0.1:5244
   ```
 
 </details>
 
 <details>
-<summary>strm 局域网同步播放进度</summary>
+<summary>strm LAN-synced playback progress</summary>
 
-* 问题：strm 文件因为缺少时长信息，emby 不存储播放进度，导致无法继续播放。
-* 内置方案：单机运行 etlp 时，会临时储存在内存。关闭脚本进度丢失。（默认已启用，无需配置本功能）
-* 局域网方案：同时在 nas 或者其他服务器运行 etlp，播放时会向服务器的 etlp 查询和存储播放时间。需要确保服务器长期运行。
-* 服务器 eltp 填写位置：`.ini` > `[dev]`
+* Problem: because strm files lack duration info, emby does not store playback progress, so playback cannot be resumed.
+* Built-in solution: when etlp is running on a single machine, progress is temporarily stored in memory. Progress is lost when the script is closed. (Enabled by default; no configuration needed for this feature.)
+* LAN solution: run etlp on the NAS or another server at the same time. During playback, it will query and store playback time on the server's etlp. You need to ensure the server runs long-term.
+* Server-side eltp setting location: `.ini` > `[dev]`
   ```
-    # 是否仅监听本机地址，会更安全，但无法与让其他 etlp 通讯。在服务器运行时需要改为 no。
+    # Whether to listen only on the local address. This is safer, but it prevents communication with other etlp instances. When running on a server, change it to no.
     listen_on_localhost = no
   ```
-* 客户端 eltp 填写位置：`.ini` > `[dev]`
+* Client-side eltp setting location: `.ini` > `[dev]`
   ```
-    # 在服务器运行的 eltp 通讯监听地址，例如：http://192.168.1.23:58000
-    # 限客户机填，服务器取消监听本机地址即可，服务器的日志会有提示。
+    # The listening address of the etlp instance running on the server, for example: http://192.168.1.23:58000
+    # Fill this in on clients only. The server only needs to stop listening on localhost; the server log will show a prompt.
     server_side_href =
   ```
 
 </details>
 
 <details>
-<summary>mpv 传递数据给 lua 脚本</summary>
+<summary>mpv passes data to lua scripts</summary>
 
-* 通过 `script-message` 传递部分数据给 mpv，以便其他脚本使用。
-* `'script-message', 'etlp-cmd-pipe', cmd_pipe` : 命令行 ipc 管道名称。
-* `'script-message', 'etlp-playlist-data', playlist_data` : emby 的播放列表数据。
-* `'script-message', 'etlp-playlist-done'` : 表明 mpv 播放列表已添加完成。
-* 填写位置：`.ini` > `[dev]`
+* Use `script-message` to pass some data to mpv so other scripts can use it.
+* `'script-message', 'etlp-cmd-pipe', cmd_pipe` : command-line IPC pipe name.
+* `'script-message', 'etlp-playlist-data', playlist_data` : emby playlist data.
+* `'script-message', 'etlp-playlist-done'` : indicates that the mpv playlist has been fully added.
+* Fill in at: `.ini` > `[dev]`
   ```
-  # 播放列表数据较大，默认不传递。若需要启用，则填写此项。
+  # Playlist data is large and is not passed by default. Fill this in if you need to enable it.
   mpv_ipc_playlist_data = yes
   ```
 
 </details>
 
 <details>
-<summary>mpv 自动跳过片头片尾</summary>
+<summary>mpv auto-skip intro/outro</summary>
 
-* 播放时检查视频章节时长与标题，符合条件时自动跳过该章节或仅提示。
-* 前提：
-    * Emby 成功扫描片头。（测试：禁用脚本，用网页播放时有跳过片头按钮）
-    * 或者视频文件自带片头片尾章节。（若章节的标题标准会更准确，例如 "Opening"）
-* 原理：视频文件本身无章节时，脚本会自动给 mpv 加片头章节。并在播放时候检测。
-* 填写位置：`.ini` > `[dev]`
+* During playback, check chapter duration and title. If they meet the conditions, automatically skip that chapter or only show a hint.
+* Requirements:
+    * Emby successfully scanned the intro. (Test: disable the script; when playing in the web page, there is a skip-intro button.)
+    * Or the video file itself contains intro/outro chapters. (Accuracy is better if chapter titles are standardized, such as "Opening".)
+* Principle: if the video file itself has no chapters, the script automatically adds intro chapters to mpv and checks them during playback.
+* Fill in at: `.ini` > `[dev]`
   ```
-  # 片头有90秒，片尾有91秒，允许5秒钟的误差，片头在前30%里，片尾在70%以后，片头片尾可能的章节名称（逗号隔开，辅助判断，不分大小写）
-  # 若要禁用就删除掉，或者在前面加 # 号注释掉。mpv 章节跳转快捷键是 ; ' Page Up Page Down
-  # 若含有特殊值 hint_only（可删除），为启用仅提示模式，不自动跳过。需要跳过就按章节跳转快捷键。
+  # Intro is 90 seconds, outro is 91 seconds, 5 seconds of error are allowed, the intro is within the first 30%, the outro is after 70%, possible chapter names for intro/outro (comma-separated, used for auxiliary matching, case-insensitive)
+  # To disable, delete it or comment it out with # in front. mpv chapter-jump shortcuts are ; ' Page Up Page Down
+  # If it includes the special value hint_only (removable), hint-only mode is enabled and chapters are not skipped automatically. To skip, use the chapter-jump shortcuts.
   skip_intro = 90, 91, 5, 30, 70, opening, ending, op, ed, hint_only
   ```
 
 </details>
 
 <details>
-<summary>mpv bangumi trakt 独立同步脚本</summary>
+<summary>mpv bangumi trakt standalone sync script</summary>
 
-> mpv bangumi trakt 独立同步脚本
+> mpv bangumi trakt standalone sync script
 
-* 使用情景：不想用本工具网页调用播放，但也想标记 bangumi trakt 中对应条目为已观看。
-* 条件：mpv 播放器，播放网络视频流，播放进度超过 90% 时同步。
-* 使用方法：
-    1. 下载 `etlp-python-embed-win32.zip` 并解压到任意文件夹。  
-       （之前就在用本脚本的，更换为便携版，不要运行两份。或者参考 `FAQ > 观看记录存储服务相关` 自行安装 Python 和依赖。）
-    2. 将 lua： `刚才解压的文件夹\utils\others\etlp_sync_bgm_trakt.lua` 移动至 mpv 的脚本文件夹。  
-       例如：`mpv.exe 所在目录 > portable_config > scripts > etlp_sync_bgm_trakt.lua`
-    3. 修改 `etlp_sync_bgm_trakt.lua` 内 etlp 的保存目录（刚才解压的文件夹路径）
-    4. 参考上方 `FAQ > 观看记录存储服务相关` 修改配置文件：`embyToLocalPlayer_config.ini`
-    5. 参考 `隐藏功能 > 预读取继续观看` 设置 `[dev] > server_data_group`。用于获取`user_id`
-    6. 播放一个视频，进度拖到 90% 以上，查看 etlp 日志：`刚才解压的文件夹 > log.txt`。或者查看 mpv 日志。
-* 排错方法：使用本项目浏览器调用播放测试。
+* Use case: you do not want to use webpage-triggered playback from this tool, but still want to mark the corresponding bangumi/trakt entries as watched.
+* Requirements: mpv player, playing a network video stream, and sync triggers when playback progress exceeds 90%.
+* Usage:
+    1. Download `etlp-python-embed-win32.zip` and extract it to any folder.
+       (If you were already using this script before, switch to the portable package and do not run two copies. Or refer to `FAQ > Watch-record storage services` to install Python and dependencies yourself.)
+    2. Move the lua file `the folder you just extracted\utils\others\etlp_sync_bgm_trakt.lua` into mpv's scripts folder.
+       For example: `directory containing mpv.exe > portable_config > scripts > etlp_sync_bgm_trakt.lua`
+    3. Modify the etlp save directory inside `etlp_sync_bgm_trakt.lua` (the folder path you just extracted)
+    4. Refer to `FAQ > Watch-record storage services` above and modify the config file: `embyToLocalPlayer_config.ini`
+    5. Refer to `Hidden features > Prefetch continue watching` to set `[dev] > server_data_group`. This is used to obtain `user_id`
+    6. Play a video and drag progress past 90%, then check the etlp log: `the folder you just extracted > log.txt`. Or check the mpv log.
+* Troubleshooting method: test browser-triggered playback using this project.
 
 </details>
 
 <details>
-<summary>预读取下一集</summary>
+<summary>Prefetch next episode</summary>
 
-> 预读取下一集
+> Prefetch next episode
 
-* 预读取并丢弃下一集首尾文件数据，加速集数切换播放。
-* 需要配合 nginx 反代管理缓存，比较麻烦。(在本机或者 nas 运行一个 nginx，缓存并切片视频流)  
-  读取并丢弃 首8% 尾2% 的数据。按理 rclone 配置缓存也可以，但实测效果不佳。
-* 浏览器访问局域网的反代站，或配合 本地 重定向/替换 播放网址。才能起到缓存效果。
-* 填写位置：`.ini` > `[playlist]`
+* Prefetch and discard the beginning and end file data of the next episode to speed up episode switching.
+* This needs nginx reverse-proxy cache management, which is somewhat troublesome. (Run nginx on the local machine or NAS to cache and slice the video stream.)
+  It reads and discards the first 8% and last 2% of the data. In theory, rclone cache settings could also work, but actual test results were poor.
+* You only get caching benefits when the browser accesses the LAN reverse-proxy site, or when used together with Local redirect / replace playback URL.
+* Fill in at: `.ini` > `[playlist]`
     ```
-    # 播放进度超过 50% 时触发预读取，预读取下一集。
+    # Trigger prefetch when playback progress exceeds 50%, and prefetch the next episode.
     prefetch_percent = 50
-    
-    # 服务端路径包含以下前缀才预读取，逗号隔开，全部启用就留空或删除。
+
+    # Only prefetch when the server path contains the following prefixes, comma-separated. Leave empty or delete to enable for all.
     prefetch_path = /mnt/od/TV, /mnt/gd
 
-    # 启用本功能的域名的关键词，逗号隔开。全部启用就留空或删除。
-    prefetch_host = 
+    # Keywords of domain names that enable this feature, comma-separated. Leave empty or delete to enable for all.
+    prefetch_host =
     ```
-* 网盘和本地硬盘混合使用的话。[可选] 配置本地文件用读盘模式：`.ini` > dev > force_disk_mode_path
-* 用自签证书反代 https 的站，可以仅反代视频流，并配置跳过证书验证。`.ini` > dev > skip_certificate_verify  
-  不过部分播放器也会校检证书，这个需要自行解决。
+* If you use cloud storage and a local hard drive together: [Optional] configure local files to use disk-read mode: `.ini` > dev > force_disk_mode_path
+* If you reverse-proxy an https site with a self-signed certificate, you can proxy only the video stream and configure certificate verification to be skipped. `.ini` > dev > skip_certificate_verify
+  However, some players also validate certificates, so you need to handle that yourself.
 
 </details>
 
 <details>
-<summary>预读取继续观看</summary>
+<summary>Prefetch continue watching</summary>
 
-> 预读取继续观看
+> Prefetch continue watching
 
-* 类似预读取下一集。仅处理最近上映的集（7天内），适合追更。
-* 尝试获取 strm 文件的媒体信息，加速起播。
-* [可选] 在不关机的机器里配置并运行更合适一点。
-* 填写位置：`.ini` > `[dev]`
+* Similar to Prefetch next episode. Only handles recently released episodes (within 7 days), making it suitable for following ongoing series.
+* Attempts to get media info from strm files to speed up startup.
+* [Optional] It is more suitable to configure and run this on a machine that is not turned off.
+* Fill in at: `.ini` > `[dev]`
   ```
-  # 服务器信息，各项之间逗号隔开，最后分号结尾。复数服务器需要配置就分号后面继续写。
-  # api_key：设置 > API 密钥。user_id：设置 > 用户 > [用户名] > 看浏览器网址。
+  # Server information, comma-separated within each entry, with each entry ending in a semicolon. If you need multiple servers, continue writing after the semicolon.
+  # api_key: Settings > API Keys. user_id: Settings > Users > [username] > look at the browser URL.
   server_data_group = myself, http://localhost:8096, api_key, user_id;
                       others, https://www.abc.org, api_key, user_id;
-  # 配置格式：上方配置的服务器名，一个或者多个服务端媒体路径前缀，复数服务器同样分号隔开。
-  # 服务端路径包含路径前缀才预读取，全部就写 /
-  # strm 是特殊值，只用来刮出媒体时长信息。此时无视上映时间和路径限制。
-  prefetch_conf = myself, strm, /, /od/另一个路径前缀;
+  # Format: server name from the config above, followed by one or more server-side media path prefixes; multiple servers are also separated by semicolons.
+  # Prefetch only when the server path contains the path prefix; use / for all paths
+  # strm is a special value used only to scrape media duration information. In this mode, release time and path limits are ignored.
+  prefetch_conf = myself, strm, /, /od/another-path-prefix;
   ```
-* 若需要 nginx 缓存：网址填反代站。如果填源站，需要配置上方的重定向视频流到反代站。  
-  注意播放链接与预读取链接不一致。 `proxy_cache_key "$arg_MediaSourceId$slice_range";`
+* If nginx caching is needed: fill in the reverse-proxy site URL. If you fill in the origin site URL, you need to configure the video-stream redirection above to point to the reverse-proxy site.
+  Note that the playback link and the prefetch link are different. `proxy_cache_key "$arg_MediaSourceId$slice_range";`
 
 </details>
 
 <details>
-<summary>追更 TG 通知</summary>
+<summary>Follow-up TG notifications</summary>
 
-> 追更 TG 通知
+> Follow-up TG notifications
 
-* 继续观看更新时，通过 Telegram 机器人发送通知。（每10分钟检测一次）
-* 前置依赖：启用 预读取继续观看。
-* 填写位置：`.ini` 顶部或底部（单独的配置区域即可，不要填到别的配置里）
+* When continue-watching entries are updated, send notifications through a Telegram bot. (Checked every 10 minutes)
+* Prerequisite: enable Prefetch continue watching.
+* Fill in at the top or bottom of `.ini` (use a standalone config section; do not place it inside another config block)
     ```
     ##################################################################
-    ### v v # # # # # # # # 追更 TG 通知 # # # # # # # # # # # v v ###
-    
+    ### v v # # # # # # # # Follow-up TG notifications # # # # # # # # # # # v v ###
+
     [tg_notify]
-  
-    # 找 @BotFather 创建一个机器人。复制并填写 token。
-    bot_token = 
-  
-    # 点击你创建的机器人，然后点击开始或随便发送信息给你的机器人，最后启动本脚本。机器人会告诉你 chat_id。
-    chat_id = 
-  
-    # chat_id 填写后，重启脚本，会自动测试，提示测试成功的话，本项可以关闭。 
+
+    # Find @BotFather to create a bot. Copy the token and fill it in.
+    bot_token =
+
+    # Open the bot you created, click Start or send any message to it, then start this script. The bot will tell you your chat_id.
+    chat_id =
+
+    # After filling in chat_id, restart the script. It will test automatically. If it says the test succeeded, you can disable this item.
     get_chat_id = yes
-  
-    # 如果不需要预读取服务，仅通知。就启用本项。
+
+    # Enable this if you only want notifications and do not need the prefetch service.
     disable_prefetch = no
-  
-    # 静音通知时间段，范围间逗号隔开。例如：0-9 0点后9点前。类似针式时钟的时间范围。
+
+    # Silent notification time ranges, comma-separated. Example: 0-9 means after 0:00 and before 9:00. Similar to clock-style time ranges.
     silence_time = 0-9, 12-14
-  
-    # [可选] 可指定 api, 自行搜索 "TG Bot API 反代", 解决网络连接问题。
+
+    # [Optional] You can specify an API endpoint yourself. Search for "TG Bot API reverse proxy" to solve network connectivity issues.
     base_url = https://api.telegram.org
     ```
 
 </details>
 
 <details>
-<summary>持久性缓存</summary>
+<summary>Persistent cache</summary>
 
-> 配置方法
+> Configuration
 
-* 填写位置：`.ini` 顶部或底部（单独的配置区域即可，不要填到别的配置里）
+* Fill in at the top or bottom of `.ini` (use a standalone config section; do not place it inside another config block)
 
     ```
     ##################################################################
-    ### v v # # # # # # # 持久性缓存（边下边播） # # # # # # # # v v ###
-    
+    ### v v # # # # # # # Persistent cache (download while watching) # # # # # # # # v v ###
+
     [gui]
-    
-    # 未适配播放列表，不接受播放列表相关问题反馈，建议禁用播放列表使用。
-    # 是否需要缓存文件到本地硬盘，播放时会弹菜单。油猴不用开读取硬盘模式。
+
+    # Playlist support is not implemented. Feedback about playlist-related issues is not accepted. It is recommended to disable playlists when using this.
+    # Whether to cache files to the local hard drive. A menu will pop up during playback. The userscript does not need disk-read mode enabled.
     enable = no
-    
-    # 缓存路径：NTFS 支持不很理想，解决方法详见下方 FAQ
+
+    # Cache path: NTFS support is not ideal. See the FAQ below for solutions.
     cache_path = D:\cache
-    
-    # [可选] 在服务端文件路径包含指定关键词时才弹菜单，否则直接播放。关键词间逗号隔开。
-    enable_path = 
-    
-    # 当播放进度超过 98% ，此时若关闭播放器，则删除缓存。禁用填 100
+
+    # [Optional] Only show the menu when the server file path contains the specified keywords; otherwise play directly. Separate keywords with commas.
+    enable_path =
+
+    # When playback progress exceeds 98%, closing the player will delete the cache. Use 100 to disable.
     delete_at = 98
-    
-    # 缓存超过 100GB 时删除旧缓存。
+
+    # Delete old cache when cache size exceeds 100GB.
     cache_size_limit = 100
-    
-    # 重启后是否自动开始下载未完成任务
+
+    # Whether to automatically resume unfinished download tasks after restart
     auto_resume = no
-    
-    # 下载时的代理，用不到就留空。 http://127.0.0.1:7890
+
+    # Proxy used for downloading. Leave empty if not needed. http://127.0.0.1:7890
     http_proxy =
-    
-    # 需要禁用 gui 的域名：所包含的字符串列表，逗号隔开，将根据油猴设置直接播放。
+
+    # Domains where gui should be disabled: a comma-separated list of contained strings; playback will follow the userscript setting directly.
     except_host = localhost, 127.0.0.1, 192.168. , 192-168-, example.com:8096
     ```
 
-> 持久性缓存（边下边播）FAQ
+> Persistent cache (download while watching) FAQ
 
-* 如果播放进度超过下载进度，建议关闭播放器触发回传以保存播放进度。（以下为 Windows 平台测试）：   
-  mpv mpv.net 会停止播放十几秒。  
-  Pot 会停止播放或跳到尾部。(记得拖回来再关闭）  
-  MPC 会退出播放器。  
-  VLC 会停止播放。
-* Windows：（ Linux ext4, macOS APFS 没问题。）   
-  问题：默认的硬盘文件系统 NTFS 会造成额外磁盘开销和初始化时间久，ReFS 正常。  
-  解决方案：
-    1. 使用 `顺序下载`（需要下载完毕才会用缓存播放，点播放会回退到网络播放模式）
-    2. Win10 工作站版和企业版 支持 ReFS，把缓存盘或分区格式化为 ReFS（数据会清空）。
-    3. 未核实：用密匙升级为工作站版，或数字权利工具转换。
-    4. 开虚拟机或别的电脑有工作站版，然后直通硬盘并格式化成 ReFS 给 Win10 用（专业版测试可行）。  
-       Win8.1 有人改注册表支持。
-* 网页点击播放时弹出菜单：
-    1. 播放：当缓存进度大于播放开始时间时用缓存播放。其他情况回退网络模式。
-    2. 下载 1% 后播放：等待下载首尾各 1% 后启动播放器。其他等同于播放。
-    3. 下载（首尾优先）：优先下载首尾各 1% ，可边下边播。
-    4. 下载（顺序下载）：不能边下边播。
-    5. 删除当前下载
-    6. 下载管理器
+* If playback progress exceeds download progress, it is recommended to close the player to trigger reporting and save playback progress. (The following was tested on Windows):
+  mpv and mpv.net will stop playback for more than ten seconds.
+  Pot will stop playback or jump to the end. (Remember to drag it back before closing.)
+  MPC will exit the player.
+  VLC will stop playback.
+* Windows: (Linux ext4 and macOS APFS are fine.)
+  Problem: the default NTFS filesystem causes extra disk overhead and long initialization time, while ReFS works normally.
+  Solutions:
+    1. Use `sequential download` (cache playback is only used after the download finishes; clicking Play will fall back to network playback mode)
+    2. Win10 Workstation and Enterprise support ReFS. Format the cache drive or partition as ReFS (this will erase data).
+    3. Unverified: upgrade to Workstation edition with a key, or convert using a digital-entitlement tool.
+    4. Use a virtual machine or another computer with Workstation edition, then pass through the hard drive and format it as ReFS for Win10 to use (confirmed working on Pro).
+       Someone reported that Win8.1 can support it by editing the registry.
+* Menu that pops up when clicking Play on the webpage:
+    1. Play: use cached playback when cache progress is ahead of the playback start point. Otherwise fall back to network mode.
+    2. Play after downloading 1%: wait until both the beginning and end 1% are downloaded before launching the player. Everything else is the same as Play.
+    3. Download (head/tail first): download the first and last 1% first, allowing download while watching.
+    4. Download (sequential download): cannot download while watching.
+    5. Delete current download
+    6. Download manager
 
 </details>
 
 <details>
-<summary>弹弹播放器</summary>
+<summary>Dandan Player</summary>
 
-> 配置方法
+> Configuration
 
-* 填写位置：`.ini` 顶部或底部（单独的配置区域即可，不要填到别的配置里）
+* Fill in at the top or bottom of `.ini` (use a standalone config section; do not place it inside another config block)
     ```
     ##################################################################
-    ### v v # # # # # # # # # 弹弹播放器 # # # # # # # # # # # # v v ###
-    
+    ### v v # # # # # # # # # Dandan Player # # # # # # # # # # # # v v ###
+
     [dandan]
-    # 弹弹play 动漫弹幕播放器支持。
-    # 播放器需开启远程访问和自动加入媒体库。以及 设置 > 文件关联 > 修复弹弹play专用链。
-    
-    # 总开关： no 禁用，yes 启用。
+    # Support for dandanplay anime danmaku player.
+    # The player must enable remote access and automatic media-library joining. Also use Settings > File Associations > Repair dandanplay dedicated links.
+
+    # Main switch: no = disable, yes = enable.
     enable = no
-    
-    # 播放器路径
+
+    # Player path
     exe = C:\Green\dandanplay-x64\dandanplay.exe
-    
-    # 远程访问端口。远程访问里 ip 改为 127.0.0.1 会比较安全。
+
+    # Remote access port. For better security, change the remote-access IP to 127.0.0.1.
     port = 80
-    
-    # 若远程访问曾经启用过 Web验证，请在这里填写 api密钥，没设置则留空。（注意不是密码）
+
+    # If Web authentication was ever enabled for remote access, fill in the API key here. Leave empty if not set. (Note: this is not the password.)
     api_key =
-    
-    # 仅当服务端路径包含以下路径时使用弹弹播放，逗号隔开。全部文件都用弹弹播放就留空或删除。
-    enable_path = /mnt/od/TV, /mnt/disk1/anime, 路径的部分字符也可以, anime
-    
-    # 通过 http 播放时，是否控制开始时间。需等待播放15秒。
+
+    # Use Dandan playback only when the server path contains the following paths, comma-separated. Leave empty or delete to use Dandan for all files.
+    enable_path = /mnt/od/TV, /mnt/disk1/anime, partial path characters also work, anime
+
+    # When playing via http, whether to control the start time. Requires waiting 15 seconds after playback starts.
     http_seek = yes
     ```
 
-> 弹弹play FAQ
+> dandanplay FAQ
 
-* 弹弹 api 服务需要10秒左右启动，播放时间太短可能会回传失败。
-* 播放器需开启远程访问和自动加入媒体库。以及 设置 > 文件关联 > 修复弹弹play专用链。
-* 若通过 http 播放，有以下缺点：
-    1. 每次播放需要选择弹幕。（已把文件名发送给播放器匹配）
-    2. 启动时无法及时跳转到 Emby 开始时间，需要播放开始后等待15秒。（每次看完一集则不影响）
-    3. 无法加载外挂字幕。
-* 读盘模式：解决切换设备播放时，进度不一致（读盘模式进度由弹弹存储），同步策略：  
-  当 Emby 上的进度大于120秒，但弹弹播放器进度小于30秒时（且 api 启动后未曾超过120秒），
-  会调整弹弹播放器进度，使其与 Emby 上的一致，需等待 api 启动。
+* The dandan API service takes about 10 seconds to start, so if playback is too short, progress reporting may fail.
+* The player must enable remote access and automatic media-library joining. Also use Settings > File Associations > Repair dandanplay dedicated links.
+* If playing via http, the following drawbacks apply:
+    1. You need to choose danmaku every time. (The filename is already sent to the player for matching.)
+    2. At startup it cannot jump to the Emby start time promptly; you need to wait 15 seconds after playback starts. (This does not matter once you finish each episode.)
+    3. External subtitles cannot be loaded.
+* Disk-read mode: this solves inconsistent progress when switching playback devices (in disk-read mode, progress is stored by Dandan). Sync strategy:
+  when Emby progress is greater than 120 seconds, but Dandan Player progress is less than 30 seconds (and the API has never exceeded 120 seconds since startup),
+  Dandan Player progress will be adjusted to match Emby, and you need to wait for the API to start.
 
 </details>
 
 <details>
-<summary>Pot 读盘模式时：播放列表以 Emby 为准 / 美化播放列表标题</summary>
+<summary>In Pot disk-read mode: use Emby as the playlist source / beautify playlist titles</summary>
 
-* 修复情景：
-    1. Pot 读盘模式：播放动漫第一季，会漏播 Emby 穿插的 S0 集数。
-    2. Pot 读盘模式：Emby 上创建的播放列表无法传递给 Pot。
-    3. Pot 读盘模式：剧集播放列表标题错位/缺少。
-* 前提条件二选一：
-    1. Pot 选项 > 配置 > 用当前方案创建 > 改配置文件名称为 `emby`（用脚本播放时会自动切换为该配置）:  
-       Pot 选项 > 左上角切换配置为 emby > 基本 > 相似文件打开策略 > 仅打开选定的文件 > 确定 > 关闭。（仅 emby 播放时由脚本添加播列表）
-    2. Pot 选项 > 基本 > 相似文件打开策略 > 仅打开选定的文件。（缺点：用文件管理器播放无播放列表）
-* 填写位置：`.ini` > `[dev]`
+* Fixes these scenarios:
+    1. Pot disk-read mode: when playing anime season 1, it misses S0 episodes interleaved by Emby.
+    2. Pot disk-read mode: playlists created in Emby cannot be passed to Pot.
+    3. Pot disk-read mode: episode playlist titles are misaligned / missing.
+* Choose one of these prerequisites:
+    1. Pot Options > Preferences > Create from current settings > rename the config file to `emby` (the script will switch to this config automatically during playback):
+       Pot Options > switch configuration in the upper-left to emby > Basic > Open similar files strategy > Open selected file only > OK > Close. (The script adds the playlist only during emby playback.)
+    2. Pot Options > Basic > Open similar files strategy > Open selected file only. (Drawback: no playlist when playing from a file manager.)
+* Fill in at: `.ini` > `[dev]`
   ```
-  # 启动 Pot 的时候指定配置文件的名称，不需要就清空。
-  # 若指定的配置名称不存在，Pot 会回退使用重置后的初始配置。
+  # Specify the Pot config profile name at startup. Clear it if not needed.
+  # If the specified config profile does not exist, Pot will fall back to the reset default config.
   pot_conf = emby
   ```
-* 填写位置：`.ini` > `[playlist]`
+* Fill in at: `.ini` > `[playlist]`
   ```
-  # 解决 Pot 读盘模式漏播第零季选集及播放列表标题错位/缺少，播放列表加载会变慢，每秒1集。
+  # Fixes missed season-0 episode playback and misaligned/missing playlist titles in Pot disk-read mode. Playlist loading becomes slower, about 1 episode per second.
   mix_s0 = yes
   ```
-* 播放的第一个文件是 S0 的话，会连续播 S0。（通用 Bug，换 mpv 也会这样）
+* If the first file played is from S0, it will keep playing S0 continuously. (General bug; mpv behaves the same.)
 
 </details>
 
 <details>
-<summary>替换媒体标题字符（高版本 Pot 渲染 Pin 失败）已经默认启用</summary>
+<summary>Replace media-title characters (Render Pin failed on newer Pot versions) — enabled by default</summary>
 
-* 问题：标题含空格或者个别半角符号，会导致 pot 无法从命令行启动，无法播放。
-* 解决方案：把半角单双引号替换为全角，空格替换为连字符。是以下配置的默认行为。
-* 填写位置：`.ini` > `[dev]`
+* Problem: spaces or some half-width symbols in the title can prevent pot from launching from the command line, so playback fails.
+* Solution: replace half-width single/double quotes with full-width ones, and replace spaces with hyphens. This is the default behavior of the config below.
+* Fill in at: `.ini` > `[dev]`
   ```
-    # 此功能可能产生其他问题，建议仅在 pot 中使用。
-    # 谨慎配置，只接受单个字符，全角逗号隔开，成对填写。
-    # 不要有多余的空格引号，注意分隔符是全角的逗号。
+    # This feature may cause other problems. It is recommended to use it only with pot.
+    # Configure carefully. Only single characters are accepted, separated in pairs by full-width commas.
+    # Do not include extra spaces or quotation marks. Note that the separator is the full-width comma.
     media_title_translate = '，＇，"，＂， ，-
   ```
 
 </details>
 
 <details>
-<summary>使用其他版本视频的字幕</summary>
+<summary>Use subtitles from other video versions</summary>
 
-* 效果示例：把 1080p 版本的内封字幕提取出来给 2160p 的无字幕视频使用。
-* 触发条件：视频含多版本，当前版本的视频无外挂字幕，且内封字幕标题无下方配置所包含字符时。
-* 解决方案：播放时，提取其他版本视频内，符合下方语言偏好的字幕，给当前版本视频使用。
-* 填写位置：`.ini` > `[dev]`
+* Example effect: extract embedded subtitles from the 1080p version and use them for the 2160p video that has no subtitles.
+* Trigger conditions: the video has multiple versions, the current version has no external subtitles, and the embedded subtitle titles do not contain the characters listed in the config below.
+* Solution: during playback, extract subtitles from another version of the video that match the language preference below, and use them for the current version.
+* Fill in at: `.ini` > `[dev]`
   ```
-  # 视频含多版本且字幕标题不包含下方字符时，提取其他版本视频的字幕供当前视频使用。下方配置字母需小写。选项逗号隔开，前面优先。
+  # If the video has multiple versions and subtitle titles do not contain the characters below, extract subtitles from other versions for the current video. Letters in the config below must be lowercase. Options are comma-separated, with earlier ones taking priority.
   sub_extract_priority = 中英特效, 双语特效, 简中特效, 简体特效, 特效, 中上, 中英, 双语, 简, simp, 中, chi
   ```
 

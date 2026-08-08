@@ -31,7 +31,7 @@ class EmbyApiThin:
         return res
 
     def get_playback_info(self, item_id, timeout=15):
-        # emby strm 在回传时可以扫出媒体信息，应该是这个请求产生的结果的。
+        # For emby strm, media info can be scanned out during reporting; this should be the result produced by this request.
         res = self.get(f'Items/{item_id}/PlaybackInfo', timeout=timeout)
         return res
 

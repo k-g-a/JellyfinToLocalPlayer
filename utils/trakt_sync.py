@@ -50,7 +50,7 @@ def fill_trakt_ep_ids_by_series(trakt, emby, eps_data, force=False):
             return eps_data
     tk_eps_ids = {i['number']: (i['ids'], i['title']) for i in tk_eps_ids}
     for ep in eps_data:
-        ep_index = ep.get('index') or ep.get('IndexNumber')  # sync via stream 不是 index
+        ep_index = ep.get('index') or ep.get('IndexNumber')  # sync via stream is not index
         if not tk_eps_ids.get(ep_index):
             logger.info(f'fill_trakt_ep_ids_by_series: trakt info not found, {ep_index=}')
             continue
@@ -70,9 +70,9 @@ def sync_ep_or_movie_to_trakt(trakt, eps_data, emby=None):
         if _type not in allow:
             raise ValueError(f'type not in {allow}')
         providers = ['tmdb', 'imdb', 'tvdb']
-        # imdb tvdb 都可能请求报错 500, tmdb 没有分集 id
-        # tvdb 搜索电影可能匹配错误，有处理但浪费请求。
-        # ?电视 tvdb 优先，因为集数的 imdb id 只能查到主条目，而不是分集。
+        # imdb and tvdb requests may both error with 500, tmdb has no episode id
+        # tvdb searching for movies may mismatch, it's handled but wastes a request.
+        # ? tvdb is preferred for TV, because an episode's imdb id can only find the main item, not the specific episode.
         if _type != 'movie':
             providers.reverse()
         provider_ids = {k.lower(): v for k, v in ep['ProviderIds'].items() if k.lower() in providers}
@@ -103,7 +103,7 @@ def sync_ep_or_movie_to_trakt(trakt, eps_data, emby=None):
             break
 
         if provider_ids and not trakt_ids and not trakt_ids_via_series:
-            # 刚上映的剧集，trakt ep 的 tvdb id 可能缺失
+            # For newly aired shows, the trakt ep's tvdb id may be missing
             eps_data = fill_trakt_ep_ids_by_series(trakt=trakt, emby=emby, eps_data=eps_data, force=True)
             ep = [i for i in eps_data if ep['basename'] == i['basename']][0]
             trakt_ids_via_series = ep.get('trakt_ids')
@@ -131,7 +131,7 @@ def sync_ep_or_movie_to_trakt(trakt, eps_data, emby=None):
 
 
 def trakt_check_ep_miss_mark(trakt, emby, eps_data, trakt_ids):
-    # 不支持 Plex。
+    # Plex is not supported.
     if not emby:
         return
     em_keys = get_emby_season_watched_ep_key(emby=emby, eps_data=eps_data)
@@ -141,7 +141,7 @@ def trakt_check_ep_miss_mark(trakt, emby, eps_data, trakt_ids):
     tr_ids_map = trakt.get_season_via_ep_ids(trakt_ids, get_key_map=True)
     miss_keys = set(em_keys) - set(tr_keys)
     miss_ids = [tr_ids_map.get(k) for k in miss_keys if tr_ids_map.get(k)]
-    for miss_id in miss_ids:  # 若遇到未上映却实际看过时（个别平台提前播放），该数据会有误，故再次检查。
+    for miss_id in miss_ids:  # If it hasn't aired yet but was actually watched (some platforms allow early playback), this data may be inaccurate, so double-check it.
         if trakt.check_is_watched(miss_id, _type='episode'):
             miss_ids.remove(miss_id)
     if miss_ids:

@@ -17,19 +17,19 @@ class MyIntEnum(enum.IntEnum):
 
 
 class SubjectState(MyIntEnum):  # Subject['type']
-    WISH = 1  # 想看
-    WATCHED = 2  # 看过
-    WATCHING = 3  # 在看
-    ON_HOLD = 4  # 搁置
-    DROPPED = 5  # 抛弃
+    WISH = 1  # want to watch
+    WATCHED = 2  # watched
+    WATCHING = 3  # watching
+    ON_HOLD = 4  # on hold
+    DROPPED = 5  # dropped
 
 
 class SubjectType(MyIntEnum):  # Subject['subject_type']
-    BOOK = 1  # 书籍
-    ANIME = 2  # 动画
-    MUSIC = 3  # 音乐
-    GAME = 4  # 游戏
-    REAL = 6  # 三次元
+    BOOK = 1  # book
+    ANIME = 2  # anime
+    MUSIC = 3  # music
+    GAME = 4  # game
+    REAL = 6  # real-life (non-animation)
 
 class BangumiApi:
     def __init__(self, username=None, access_token=None, private=True, http_proxy=None):
@@ -102,10 +102,10 @@ class BangumiApi:
             res = _res
         try:
             raw_list = res['list']
-            # 无结果 res 也可能返回 {'list': None, 'results': 1}
+            # When there's no result, res may also return {'list': None, 'results': 1}
             if raw_list is None:
                 raise KeyError
-        except KeyError: # 404 不存在时
+        except KeyError: # when 404 doesn't exist
             res = _res
             raw_list = res['list']
 
@@ -152,7 +152,7 @@ class BangumiApi:
             bgm_date = ep.get('airdate') or ep.get('date')
             if not bgm_date:
                 continue
-            # bgm 少部分 date 是 '1999-9-20'
+            # a small number of bgm dates are like '1999-9-20'
             if abs((datetime.datetime.strptime(bgm_date[:10], '%Y-%m-%d') - dates[date_idx]).days) <= fuzzy_days:
                 res.append(ep)
                 date_idx += 1
@@ -182,7 +182,7 @@ class BangumiApi:
         platform_allow = ['TV']
         if not subject_platform:
             subject_platform = self.get_subject(subject_id)['platform']
-        if subject_platform == 'WEB':  # 仅限主条目是 WEB 时，续集可以是 WEB。好像有主条目 TV，需要过滤掉续集里 WEB 的情况。
+        if subject_platform == 'WEB':  # sequels can be WEB only if the main item is WEB. There seem to be cases where the main item is TV, so WEB sequels need to be filtered out.
             platform_allow.append(subject_platform)
 
         custom_get_episodes = lambda _id: self.get_episodes_and_date_filter(_id, dates=match_by_dates)
@@ -193,7 +193,7 @@ class BangumiApi:
             for _ in range(loop_limit):
                 # if not fist_part:
                 #     current_info = self.get_subject(current_id)
-                #     if current_info['platform'] not in platform_allow: # TV 的续集可能是 OVA，导致匹配失败
+                #     if current_info['platform'] not in platform_allow: # a TV sequel could be OVA, causing a match failure
                 #         break
                 episodes, match_dates_success = custom_get_episodes(current_id)
                 if match_dates_success:
@@ -291,8 +291,8 @@ class BangumiApi:
         if not map_state:
             return eps
         eps = eps['data']
-        # ep['episode']['ep'] 会导致分批放送匹配失败。
-        # ep['episode']['ep'] == 0 是 SP，会造成 sort 重复，故排除
+        # ep['episode']['ep'] would cause matching to fail for episodes released in batches.
+        # ep['episode']['ep'] == 0 is SP, which causes duplicate sort values, so exclude it
         state = {ep['episode']['sort']: {'watched': bool(ep['type'] == 2), 'id': ep['episode']['id'],
                                          'date': (ep['episode'].get('date') or ep['episode'].get('airdate'))}
                  for ep in eps if ep['episode']['ep'] != 0}
@@ -335,10 +335,10 @@ class BangumiApi:
 class BangumiApiEmbyVer(BangumiApi):
     @staticmethod
     def _emby_filter(bgm_data):
-        # 旧 api 没有 platform，此时 platform 会设置为 None
+        # the old api has no platform, in which case platform will be set to None
         if not bgm_data:
             return bgm_data
-        # 旧 api 由返回数据内容受到大小参数的影响。
+        # the old api's returned data content is affected by the size parameter.
         # common_keys = ['id', 'name', 'name_cn', 'summary', 'rating', 'collection', 'images']
         # v0_subject_unique_keys = ['type', 'nsfw', 'locked', 'date', 'platform', 'series', 'infobox', 'volumes',
         #                           'total_episodes', 'meta_tags', 'tags']
@@ -349,7 +349,7 @@ class BangumiApiEmbyVer(BangumiApi):
         is_v0 = bool(bgm_data[0].get('date'))
 
         common_key = ['id', 'name', 'name_cn']
-        useful_key = common_key + ['date', 'score', 'rank', 'platform']  # 返回的字典键
+        useful_key = common_key + ['date', 'score', 'rank', 'platform']  # returned dict keys
 
         v0_key_map = common_key + ['date', ('rating', 'score'), ('rating', 'rank'), 'platform']
         legacy_key_map = common_key + ['air_date', ('rating', 'score'), 'rank', 'platform']
@@ -362,18 +362,18 @@ class BangumiApiEmbyVer(BangumiApi):
                 if isinstance(m, str):
                     d[k] = data.get(m)
                     continue
-                v = data  # data.copy() 会更稳妥。
+                v = data  # data.copy() would be more robust.
                 for _m in m:
                     v = v.get(_m, {})
                 d[k] = v
             d['update_date'] = update_date
             d['is_v0'] = is_v0
             res.append(d)
-        res = [i for i in res if i.get('rank') is not None and i.get('score') is not None] # 无 'rank' 为未上映，过滤掉
+        res = [i for i in res if i.get('rank') is not None and i.get('score') is not None] # no 'rank' means not yet aired, filter it out
         return res if return_list else res[0]
 
     def emby_search(self, title, ori_title, premiere_date: str, is_movie=False, _tv_fuzzy_date_retry=False):
-        # 新 api 通过 _emby_filter() => {is_v0 : True} 判断
+        # the new api determines via _emby_filter() => {is_v0 : True}
         day_delta = 15 if _tv_fuzzy_date_retry else 2
         air_date = datetime.datetime.fromisoformat(premiere_date[:10])
         start_date = air_date - datetime.timedelta(days=day_delta)

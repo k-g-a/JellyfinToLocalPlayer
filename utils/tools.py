@@ -106,7 +106,7 @@ def create_sparse_file(path: str, size: int):
     )
 
     if handle == -1 or handle == ctypes.c_void_p(-1).value:
-        raise OSError('无法打开文件以设置稀疏属性')
+        raise OSError('Failed to open file to set sparse attribute')
 
     bytes_returned = wintypes.DWORD(0)
     res = ctypes.windll.kernel32.DeviceIoControl(
@@ -121,7 +121,7 @@ def create_sparse_file(path: str, size: int):
     ctypes.windll.kernel32.CloseHandle(handle)
 
     if not res:
-        raise OSError('设置稀疏属性失败')
+        raise OSError('Failed to set sparse attribute')
 
     with open(path, 'r+b') as f:
         f.seek(size - 1)
@@ -149,7 +149,7 @@ def open_local_folder(data):
     # isdir = os.path.isdir(path)
     isdir = False if os.path.splitext(path)[1] else True
     windows = f'explorer "{path}"' if isdir else f'explorer /select, "{path}"'
-    # -R 确保前台显示
+    # -R ensures foreground display
     darwin = f'open -R "{path}"'
     linux = f'xdg-open "{path}"' if isdir else f'xdg-open "{os.path.dirname(path)}"'
     cmd = dict(windows=windows, darwin=darwin, linux=linux)[configs.platform.lower()]
@@ -255,7 +255,7 @@ def translate_path_by_ini(file_path, debug=False):
     if 'src' in config and 'dst' in config and not file_path.startswith('http'):
         src = config['src']
         dst = config['dst']
-        # 貌似是有序字典
+        # seems to be an ordered dict
         for k, src_prefix in src.items():
             if not file_path.startswith(src_prefix):
                 continue
@@ -299,7 +299,7 @@ def select_player_by_path(file_path, data=None):
 
 
 def get_player_cmd(media_path, file_path, data=None):
-    # emby source_path 是 strm 的内容
+    # emby source_path is the content of the strm
     config = configs.raw
     player = config['emby']['player']
     try:
@@ -359,7 +359,7 @@ def version_prefer_for_playlist(_ep_success_map, current_key, file_path, cur_lis
             res.append(sources[0])
             log.append('single ver')
             continue
-        if ep := _ep_success_map.get(cur):  # 选定成功的优先于偏好
+        if ep := _ep_success_map.get(cur):  # a successfully selected one takes priority over preference
             res.append(ep)
             log.append('current ver')
             continue

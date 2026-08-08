@@ -85,12 +85,12 @@ class App:
         self.set_window_size(width=width, height=height)
         self.button_factory(width=width, height=height, row=6, column=None,
                             text_cmd=[
-                                ('播放', lambda: self.send_data_with_cmd(data, 'play_check')),
-                                ('下载 1% 后播放', lambda: self.send_data_with_cmd(data, 'download_play')),
-                                ('下载（首尾优先）', lambda: self.send_data_with_cmd(data, 'download_not_play')),
-                                ('下载（顺序下载）', lambda: self.send_data_with_cmd(data, 'download_only')),
-                                ('删除当前下载', lambda: self.send_data_with_cmd(data, 'delete')),
-                                ('下载管理器', self.show_task_manager),
+                                ('Play', lambda: self.send_data_with_cmd(data, 'play_check')),
+                                ('Download 1% then play', lambda: self.send_data_with_cmd(data, 'download_play')),
+                                ('Download (head+tail first)', lambda: self.send_data_with_cmd(data, 'download_not_play')),
+                                ('Download (sequential)', lambda: self.send_data_with_cmd(data, 'download_only')),
+                                ('Delete current download', lambda: self.send_data_with_cmd(data, 'delete')),
+                                ('Download manager', self.show_task_manager),
                             ])
 
     def show_task_manager(self, sort=None):
@@ -112,7 +112,7 @@ class App:
             item = f"{progress:0>3}% | {t} | {path}"
             item_list.append(item)
 
-        self.root.title('缓存任务管理')
+        self.root.title('Cache Task Manager')
         self.set_window_size(888, 600)
 
         list_box = tk.Listbox(self.root, width=108, height=16, selectmode=tk.EXTENDED)
@@ -157,11 +157,11 @@ class App:
                 self.send_data_with_cmd(data=data, gui_cmd='resume_or_pause', destroy=False)
 
         text_cmd = [
-            ('刷新列表', self.show_task_manager),
-            ('暂停选中', lambda: selection_event('pause')),
-            ('恢复选中', lambda: selection_event('resume')),
-            ('名称排序', lambda: self.show_task_manager(sort='name')),
-            ('删除选中', lambda: selection_event('delete')),
+            ('Refresh', self.show_task_manager),
+            ('Pause selected', lambda: selection_event('pause')),
+            ('Resume selected', lambda: selection_event('resume')),
+            ('Sort by name', lambda: self.show_task_manager(sort='name')),
+            ('Delete selected', lambda: selection_event('delete')),
         ]
         self.button_factory(x=0, y=self.height - 30, width=self.width + 2, height=30, column=len(text_cmd),
                             text_cmd=text_cmd)

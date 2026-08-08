@@ -123,7 +123,7 @@ class SkipHTTPRedirectHandler(urllib.request.HTTPRedirectHandler):
 
 class FollowHTTPRedirectHandler(urllib.request.HTTPRedirectHandler):
     def http_error_301(self, req, fp, code, msg, hdrs):
-        # 避免重复301，原因未知
+        # Avoid duplicate 301, reason unknown
         return
 
 
@@ -179,7 +179,7 @@ def get_redirect_url(url, key_trim='PlaySessionId', follow_redirect=False):
     start = time.time()
     try:
         redirect_handler = FollowHTTPRedirectHandler if follow_redirect else SkipHTTPRedirectHandler
-        # FollowHTTPRedirectHandler, # 系统代理有可能很慢，默认不启用
+        # FollowHTTPRedirectHandler, # system proxy can be slow, not enabled by default
         timeout = 30 if follow_redirect else 5
         handlers = [
             urllib.request.HTTPSHandler(context=ssl_context),
@@ -234,8 +234,8 @@ def change_emby_play_position(scheme, netloc, item_id, api_key, stop_sec, play_s
         'X-Emby-Client': 'embyToLocalPlayer',
         'X-Emby-Device-Name': 'embyToLocalPlayer',
     }
-    if not kwargs.get('update_success'):  # 由实时回传功能标记
-        # 若省略该请求，低版本 Emby/4.8.0.64 继续观看无法新增条目，高版本 Emby 直接回传失败。
+    if not kwargs.get('update_success'):  # marked by the real-time playback reporting feature
+        # If this request is omitted, older Emby versions (4.8.0.64) can't add new "continue watching" entries, while newer Emby versions fail to report directly.
         requests_urllib(f'{scheme}://{netloc}/emby/Sessions/Playing',
                         params=params,
                         _json={
@@ -256,8 +256,8 @@ def change_jellyfin_play_position(scheme, netloc, item_id, stop_sec, play_sessio
         logger.error('stop_sec error, check it')
         return
     ticks = stop_sec * 10 ** 7
-    if not kwargs.get('update_success'):  # 由实时回传功能标记
-        # 若省略该请求，新版 Jellyfin 继续观看新增条目会跑到末端。
+    if not kwargs.get('update_success'):  # marked by the real-time playback reporting feature
+        # If this request is omitted, newer Jellyfin versions will put new "continue watching" entries at the end.
         requests_urllib(f'{scheme}://{netloc}/Sessions/Playing',
                         headers=headers,
                         _json={
@@ -347,7 +347,7 @@ def update_server_playback_progress(stop_sec, data):
         return
     file_path = data['file_path']
     ext = os.path.splitext(file_path)[-1].lower()
-    # iso 回传会被标记已观看。
+    # iso reporting will be marked as watched.
     normal_file = False if ext.endswith(('.iso', '.m3u8')) else True
     server = data['server']
     stop_sec = int(stop_sec)

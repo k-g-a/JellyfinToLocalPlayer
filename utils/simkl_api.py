@@ -24,7 +24,7 @@ class SimklApi:
         self.access_token = {}
         self.token_file = token_file or 'simkl_token.json'
         self.code_received = code_received
-        self._min_post_interval = 1.0  # simkl: post 限制每秒最多一个
+        self._min_post_interval = 1.0  # simkl: post is limited to at most one per second
         self._last_post_ts = 0
         self.init_token_workflow()
 
@@ -60,6 +60,7 @@ class SimklApi:
         res = self.req.post(url, json=_json if _json is not None else {}, params=_params)
         self._last_post_ts = time.time()
         if res.status_code == 401 and path != 'oauth/token':
+            # access_token expired/revoked by user, and simkl has no refresh_token, so can only prompt to re-authorize via browser
             try:
                 os.remove(self.token_file)
             except Exception:
@@ -71,7 +72,11 @@ class SimklApi:
             raise PermissionError(f'error found, {res.status_code=} {url=}') from None
 
     def add_ep_or_movie_to_history(self, movies: list = None, shows: list = None, episodes=None):
-        # simkl 对重复标记会自动跳过，不需要预先查重。
+        # https://api.simkl.org/api-reference/simkl/add-to-history
+        # movies: [{'ids': {...}, 'title':.., 'year':..}, ..]
+        # shows: [{'ids': {...}, 'title':.., 'year':.., 'seasons': [{'number':N, 'episodes':[{'number':N},..]}],
+        #          'use_tvdb_anime_seasons': True}, ..]
+        # simkl automatically skips duplicate marks (no-op by default unless ?allow_rewatch=yes), no need to check for duplicates beforehand.
         body = {}
         if movies:
             body['movies'] = movies
@@ -107,7 +112,7 @@ class SimklApi:
             print('simkl: oauth_token failed, may already succeed or require new oauth_code')
             return
 
-        res['obtained_at'] = int(time.time())  # simkl 不像 trakt 返回 created_at，自己记录换取时间用于估算过期
+        res['obtained_at'] = int(time.time())  # unlike trakt, simkl doesn't return created_at, so record the exchange time ourselves to estimate expiry
         with open(self.token_file, 'w', encoding='utf-8') as f:
             json.dump(res, f, indent=2)
 

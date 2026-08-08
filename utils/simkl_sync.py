@@ -53,7 +53,7 @@ def build_show_item_with_eps(emby, eps_data):
     watched_keys = []
     ep_ids = []
     for ep in eps_data:
-        ep_index = ep.get('index') or ep.get('IndexNumber')  # sync via stream 不是 index
+        ep_index = ep.get('index') or ep.get('IndexNumber')  # sync via stream is not index
         season_num = ep.get('ParentIndexNumber')
         if ep_index is None or season_num is None:
             continue
@@ -76,13 +76,13 @@ def build_show_item_with_eps(emby, eps_data):
     seasons = [
         {
             'number': season_num,
-            # 单集回传倒是可以附带 pvd_ids，但是不知道为什么多集同时附带就失败。
+            # Single-episode fallback can include pvd_ids, but for some reason it fails when multiple episodes carry them at the same time.
             'episodes': sorted(episodes, key=lambda e: e['number']),
         }
         for season_num, episodes in sorted(seasons_map.items())
     ]
     show = {'ids': ids, 'seasons': seasons,
-            # 动漫需要这个标记才能正确映射到 simkl 的 anidb 记录。
+            # Anime needs this flag to correctly map to simkl's anidb record.
             'use_tvdb_anime_seasons': True}
     if title:
         show['title'] = title

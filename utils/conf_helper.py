@@ -3,10 +3,10 @@ import re
 
 
 def path_translator():
-    print('前提条件：当前电脑可以看到文件。文件在本地或者已经通过 smb 等挂载。\n')
+    print('Prerequisite: the current machine can see the file — either stored locally or mounted via SMB etc.\n')
     src_raw = input(
-        '请输入 emby 上显示的视频文件路径\n比如：/mnt/disk1/movie/movie name (2000)/a_movie_file.mkv\n').strip()
-    dst_raw = input('\n请输入当前电脑上对应的文件夹或文件路径\n比如：E:\\movie\\movie name (2000)\n').strip()
+        'Enter the video file path as shown in Emby\ne.g.: /mnt/disk1/movie/movie name (2000)/a_movie_file.mkv\n').strip()
+    dst_raw = input('\nEnter the corresponding folder or file path on this machine\ne.g.: E:\\movie\\movie name (2000)\n').strip()
     src_split = re.split(r'[\\/]', src_raw)
     src_keep_sep = re.split(r'([\\/])', src_raw)
     dst_split = re.split(r'[\\/]', dst_raw)
@@ -22,11 +22,11 @@ def path_translator():
         dst_pre = ''.join(dst_keep_sep[:dst_index])
         break
     if not src_pre:
-        print('\n输入错误，请重试\n')
+        print('\nInvalid input, please try again\n')
     else:
-        print(f'\n[src]前缀是:\n{src_pre}')
-        print(f'\n[dst]前缀是:\n{dst_pre}')
-        print(f'\n替换后路径是:\n{os.path.normpath(src_raw.replace(src_pre, dst_pre, 1))}\n')
+        print(f'\n[src] prefix:\n{src_pre}')
+        print(f'\n[dst] prefix:\n{dst_pre}')
+        print(f'\nConverted path:\n{os.path.normpath(src_raw.replace(src_pre, dst_pre, 1))}\n')
         return True
 
 

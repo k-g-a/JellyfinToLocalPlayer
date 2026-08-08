@@ -31,7 +31,7 @@ class BaseInit:
 class BaseManager(BaseInit):
 
     def make_start_sec_correct(self):
-        # emby 缺少视频时长时无法储存起播时间
+        # emby can't store the start time when the video duration is missing
         start_sec, total_sec = self.data['start_sec'], self.data['total_sec']
         if start_sec != 0 or total_sec != 3600 * 24:
             return start_sec
@@ -113,7 +113,7 @@ class BaseManager(BaseInit):
             else:
                 self.playlist_time = stop_fun_res
 
-        # 未兼容播放器多开，暂不处理
+        # Multiple player instances are not supported yet, not handled for now
         prefetch_data['on'] = False
         prefetch_data['stop_sec_dict'].clear()
 
@@ -151,15 +151,15 @@ class BaseManager(BaseInit):
             mpv_total_sec = self.playlist_total_sec.get(key)
             need_recheck = emby_strm_miss_runtime and bool(not mpv_total_sec or _stop_sec / mpv_total_sec < 0.9)
             if need_recheck:
-                # 注意：仅限启用播放列表时候有这些处理，strm 缺失 total_sec 和 缓存播放进度
+                # Note: this handling only applies when the playlist is enabled; strm is missing total_sec and cached playback progress
                 netloc, item_id, basename = ep['netloc'], ep['item_id'], ep['basename']
-                logger.info('strm: fetching playback info')  # emby 也可能补全媒体信息失败，会返回没有 RunTimeTicks 的。
-                _playback_info = self.emby_thin.get_playback_info(item_id, timeout=30)  # Jellyfin 不会在播放中补全媒体信息
+                logger.info('strm: fetching playback info')  # emby may also fail to fill in media info, returning one without RunTimeTicks.
+                _playback_info = self.emby_thin.get_playback_info(item_id, timeout=30)  # Jellyfin won't fill in media info during playback
                 _media_source = [i for i in _playback_info['MediaSources'] if i.get('RunTimeTicks', 0)]
                 _total_sec = _media_source and _media_source[0]['RunTimeTicks'] // 10 ** 7 or 0
                 if _media_source:
-                    # 注意此处 id 变动了，为了确保回传成功，目前没不良影响。多版本不同支线的情况极少，emby 自身也是没区分。
-                    ep['item_id'] = _media_source[0].get('ItemId') or _media_source[0]['Id']  # jellyfin/10.11.1 是 Id
+                    # Note: the id changes here; to ensure reporting succeeds, there's no negative impact currently. Cases with multiple versions having different branches are rare, and emby itself doesn't distinguish them either.
+                    ep['item_id'] = _media_source[0].get('ItemId') or _media_source[0]['Id']  # jellyfin/10.11.1 is Id
                     logger.info('strm: total_sec found by recheck server data')
                 else:
                     check_miss_runtime_start_sec(netloc, item_id, basename, stop_sec=_stop_sec)
@@ -178,8 +178,8 @@ class BaseManager(BaseInit):
                     ep['total_sec'] = mpv_total_sec
                 # realtime_playing_request_sender(cur_sec=_stop_sec, data=ep, method='start')
                 # # time.sleep(1)
-                # # emby 的 simkl 插件 回传由 Progress 触发，可能会造成后台残留正在播放。
-                # # simkl 插件有全局 30 秒静默冷却时间，以及只回传首次。
+                # # emby's simkl plugin reporting is triggered by Progress, which may leave a stale "currently playing" state in the background.
+                # # the simkl plugin has a global 30-second silent cooldown, and only reports the first time.
                 # realtime_playing_request_sender(cur_sec=_stop_sec, data=ep, method='playing')
                 # realtime_playing_request_sender(cur_sec=_stop_sec, data=ep, method='end')
                 update_server_playback_progress(stop_sec=_stop_sec, data=ep)
@@ -196,7 +196,7 @@ class BaseManager(BaseInit):
                                  kwargs={'eps': need_update_eps, 'provider': provider}, daemon=True).start()
 
 
-class PrefetchManager(BaseInit):  # 未兼容播放器多开，暂不处理
+class PrefetchManager(BaseInit):  # Multiple player instances are not supported yet, not handled for now
 
     def mpv_cache_via_nas_loop(self):
         mpv = self.player_kwargs.get('mpv')
@@ -225,7 +225,7 @@ class PrefetchManager(BaseInit):  # 未兼容播放器多开，暂不处理
             logger.info('playing_feedback not support plex, skip')
             return
         if self.data.get('total_sec') == 3600 * 24:
-            # 会造成意外完成播放
+            # this would cause playback to unexpectedly be marked as completed
             logger.info('playing_feedback not support strm, skip')
             return
         stop_sec_dict = prefetch_data['stop_sec_dict']
@@ -264,7 +264,7 @@ class PrefetchManager(BaseInit):  # 未兼容播放器多开，暂不处理
                 logger.trace(f'updating start {cur_sec=} {last_ep["basename"]}')
                 continue
             after_sec = cur_sec - req_sec
-            if 180 < pause_sec or 0 < after_sec < 30 * speed:  # 尽量增加汇报间隔
+            if 180 < pause_sec or 0 < after_sec < 30 * speed:  # try to increase the reporting interval as much as possible
                 time.sleep(interval)
                 continue
             realtime_playing_request_sender(data=ep, cur_sec=cur_sec)
@@ -295,10 +295,10 @@ class PrefetchManager(BaseInit):  # 未兼容播放器多开，暂不处理
                     continue
                 if stop_sec / ep['total_sec'] < 0.5 and ep['total_sec'] != 86400:
                     continue
-                # mix_sO 可能造成 index 重复
+                # mix_sO may cause duplicate index
                 # next_ep = [e for e in self.playlist_data.values() if e['index'] == ep['index'] + 1]
-                # 字典目前保持插入顺序
-                # playlist_data 条目数量可能大于实际数量。(目前 mpv 不会)
+                # the dict currently maintains insertion order
+                # playlist_data entry count may be greater than the actual count. (currently mpv won't)
                 list_playlist_data = list(self.playlist_data.values())
                 if ep == list_playlist_data[-1]:
                     break
@@ -324,7 +324,7 @@ class PrefetchManager(BaseInit):  # 未兼容播放器多开，暂不处理
                                and i['filename'] in (cu_url, cu_re_url)]
                 if not cu_mpv_list:
                     logger.info('redirect_next_ep: mpv cur playing filename not match playlist_data, may need check')
-                    # 可能是起播时，集进度超50，在未获取重定向就进入下一集了。导致 stop_sec_dict 有未完成的条目，未进入 done_list。
+                    # Possibly at start of playback, episode progress exceeded 50 and moved to the next episode before the redirect was obtained. This causes stop_sec_dict to have unfinished entries that never entered done_list.
                     done_list.append(key)
                     continue
                 cu_mpv_index = playlist.index(cu_mpv_list[0])
@@ -405,8 +405,8 @@ class PrefetchManager(BaseInit):  # 未兼容播放器多开，暂不处理
                     requests_urllib('http://127.0.0.1:58000/pl', _json=ep)
                 elif prefetch_type == 'first_last':
                     # if ep['total_sec'] == 86400:
-                    #     # strm 媒体信息 无 -> 有：外挂字幕链接会失效。
-                    #     # 持久性缓存时会禁用播放列表：获取媒体信息来加速时的第二集播放。
+                    #     # strm media info missing -> present: the external subtitle link becomes invalid.
+                    #     # playlist is disabled during persistent caching: fetch media info to speed up playback of the second episode.
                     #     self.emby_thin.get_playback_info(ep['item_id'], timeout=60)
                     ep['gui_cmd'] = 'download_not_play'
                     # ep['stream_url'] = get_redirect_url(ep['stream_url'], follow_redirect=True)

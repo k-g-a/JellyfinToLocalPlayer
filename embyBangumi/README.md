@@ -1,35 +1,35 @@
 ## embyBangumi
 
-使用 Bangumi 的首季评分来填充 Emby 内的烂番茄评分（影评人评分）
+Use Bangumi's first-season rating to fill in Emby's Rotten Tomatoes rating (critic rating)
 
-### 原理
+### How it works
 
-利用 Emby 从 TMDB 里刮削出的 `原产地名称` 和 `上映时间` ，通过 `api.bgm.tv` 检索评分。
+Uses the `original title` and `premiere date` that Emby scrapes from TMDB to look up the rating via `api.bgm.tv`.
 
-### 使用说明
+### Usage
 
-**ini 文件配置，先保持 `dry_run = yes` 来测试效果。**  
-**没有还原功能，使用前做好备份**
+**Configure the ini file, first keep `dry_run = yes` to test the result.**  
+**There's no restore feature, back up before use**
 
-1. 下载 `embyBangumi.zip`
-   并解压到任意文件夹。[发布页](https://github.com/kjtsune/embyToLocalPlayer/releases/tag/embyBangumi)
-2. 根据注释在`_config.ini` 配置文件填写 `host` `api_key` `user_id`这三项。
-3. 在解压文件夹里打开终端。
-4. 安装依赖：`python -m pip install -i http://pypi.douban.com/simple/ --trusted-host=pypi.douban.com/simple requests`
-5. 运行命令：`python embyBangumi.py`
-6. 没问题后 `dry_run = no`，再次运行。
-7. 媒体库节目列表 > 右上角：••• > 勾选显示：影评人评分
+1. Download `embyBangumi.zip`
+   and extract it to any folder. [Releases page](https://github.com/kjtsune/embyToLocalPlayer/releases/tag/embyBangumi)
+2. Fill in `host`, `api_key`, and `user_id` in the `_config.ini` config file according to the comments.
+3. Open a terminal in the extracted folder.
+4. Install dependencies: `python -m pip install -i http://pypi.douban.com/simple/ --trusted-host=pypi.douban.com/simple requests`
+5. Run the command: `python embyBangumi.py`
+6. Once it works, set `dry_run = no` and run again.
+7. Media library program list > top right: ••• > check "Show": Critic Rating
 
-### 其他
+### Other
 
-* 评分和上映时间都是以首季为准。
-* 电影类的上映时间不同地区区别较大，有的会搜索失败。  
-  搜索无结果后会把上映时间范围延长200天，再次搜索。准确率会降低。
-* 日志出现 `trust < 0.5` ,是因为搜索出来的结果不正确。会跳过不更改。  
-  错误的结果会缓存7天，7天后重新运行会再次尝试搜索。
-* 剧集类的上映时间一般没问题，所以不会再延长搜索的时间范围二次搜索。  
-  日志出现 `not result` 有可能是 NSFW 条目限制。  
-  或者 Emby 里的上映日期和 Bangumi 的相差超过两天。  
-  `not result` 的状态也会保持7天，7天后运行才会重试。
-* 重试大概率还是一样结果。（目前不考虑申请密钥）
-* 正确的结果，会根据发布时间长短缓存。90天内发布缓存3天。1年内的缓存30天。超过1年的缓存120天。
+* Both the rating and premiere date are based on the first season.
+* Movie premiere dates vary greatly between regions, so some searches will fail.  
+  If a search returns no results, the premiere date range is extended by 200 days and searched again. Accuracy will decrease.
+* If `trust < 0.5` appears in the log, it's because the searched result is incorrect. It will be skipped and not updated.  
+  Incorrect results are cached for 7 days; running again after 7 days will retry the search.
+* Premiere dates for TV series are usually fine, so the search time range isn't extended for a second search.  
+  If `not result` appears in the log, it might be due to NSFW entry restrictions.  
+  Or the premiere date in Emby differs from Bangumi's by more than two days.  
+  The `not result` state is also kept for 7 days; it will only retry after 7 days.
+* Retrying is likely to yield the same result. (Applying for an API key is not being considered for now.)
+* Correct results are cached based on how long ago they were released. Released within 90 days: cached for 3 days. Within 1 year: cached for 30 days. Over 1 year: cached for 120 days.

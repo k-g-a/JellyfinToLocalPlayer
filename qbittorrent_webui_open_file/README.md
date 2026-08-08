@@ -1,55 +1,54 @@
 # qbittorrent\_webui\_open_file
 
-在 qBittorrent WebUI 里打开文件夹或者播放文件。
+Open a folder or play a file in the qBittorrent WebUI.
 
 ![](https://github.com/kjtsune/embyToLocalPlayer/raw/main/qbittorrent_webui_open_file/qbittorrent_webui_open_file.png)
 
-**缺点**
+**Drawback**
 
-* 若种子含多文件，只播放体积最大的。
+* If a torrent contains multiple files, only the largest one is played.
 
-## 使用说明
+## Usage
 
-**本脚本附属于 [embyToLocalPlayer](https://github.com/kjtsune/embyToLocalPlayer)
-，教程通用，有时候那边会更准确一点。有疑问可以参考那边。**
+**This script is an add-on to [embyToLocalPlayer](https://github.com/kjtsune/embyToLocalPlayer)
+, the tutorial there is generally applicable and sometimes more accurate. Refer to it if you have questions.**
 
 
-> 基础配置
+> Basic configuration
 
-1. 下载 `etlp-python-embed-win32.zip` (**便携版** | Windows only)   
-   或者 `etlp-mpv-py-embed-win32.zip` (含mpv播放器便携版 | Windows only | 快捷键见 FAQ)  
-   或者 `embyToLocalPlayer.zip` (Windows / Linux / macOS)  
-   然后解压到任意文件夹。 [发布页](https://github.com/kjtsune/embyToLocalPlayer/releases)
-2. 进入文件夹，修改配置文件：`embyToLocalPlayer_config.ini` 中的播放器路径，以及播放器选择。（若使用含mpv便携版，则无需配置。）
-3. 安装 Python (勾选 add to path) [官网](https://www.python.org/downloads/)
-   （若使用便携版，则无需安装。）
+1. Download `etlp-python-embed-win32.zip` (**portable version** | Windows only)   
+   or `etlp-mpv-py-embed-win32.zip` (includes a portable mpv player | Windows only | see FAQ for shortcuts)  
+   or `embyToLocalPlayer.zip` (Windows / Linux / macOS)  
+   then extract it to any folder. [Releases page](https://github.com/kjtsune/embyToLocalPlayer/releases)
+2. Enter the folder and edit the config file: the player path and player selection in `embyToLocalPlayer_config.ini`. (No configuration needed if using the portable version bundled with mpv.)
+3. Install Python (check "add to path") [official site](https://www.python.org/downloads/)
+   (No installation needed if using the portable version.)
 
-> **差异配置 （特别注意）**
+> **Additional configuration (pay special attention)**
 
-* 添加本油猴脚本匹配网址：油猴插件 > 已安装脚本 > `qbittorrent_webui_open_file` > 编辑 >
-  设置 > 用户匹配 > 添加 > 填入 qBittorrent WebUi
-  的网址。[发布页](https://greasyfork.org/zh-CN/scripts/450015-qbittorrent-webui-open-file)
-* 进入文件夹，修改配置文件：`embyToLocalPlayer_config.ini` 中的路径转换规则。
+* Add a URL match for this userscript: userscript extension > Installed Scripts > `qbittorrent_webui_open_file` > Edit >
+  Settings > User Matches > Add > fill in the qBittorrent WebUI
+  URL. [Releases page](https://greasyfork.org/zh-CN/scripts/450015-qbittorrent-webui-open-file)
+* Enter the folder and edit the config file: the path translation rules in `embyToLocalPlayer_config.ini`.
 
-> 如何运行 Windows / macOS / Linux
+> How to run on Windows / macOS / Linux
 
-* 按 [**embyToLocalPlayer**](https://github.com/kjtsune/embyToLocalPlayer) 原项目运行即可
+* Just run it following the original [**embyToLocalPlayer**](https://github.com/kjtsune/embyToLocalPlayer) project instructions
 
-> [可选] 使用网络播放（无需路径转换）
+> [Optional] Use network playback (no path translation needed)
 
-* 播放时，先检查本地挂载盘文件是否存在。若不存在，使用局域网 http 服务器链接播放。
-* 文件所在的服务器也需要运行 embyToLocalPlayer
-* 不支持外挂字幕。
-* 填写位置：`.ini` > `[dev]`
+* When playing, it first checks whether the file exists on a locally mounted drive. If not, it plays via a LAN http server link.
+* The server hosting the file also needs to run embyToLocalPlayer
+* External subtitles are not supported.
+* Where to fill in: `.ini` > `[dev]`
   ```
-    # 是否监听局域网，播放的播放端填 no（不然会无法使用），服务端填 yes。
+    # Whether to listen on the LAN; fill in "no" on the playback client (otherwise it won't work), and "yes" on the server side.
     listen_on_lan = no
   
-    # 可以填一个随机密码，保持服务端和客户端密码一致即可。
+    # You can fill in a random password, just keep the server and client passwords the same.
     http_server_token = etlp
    
-    # 服务端的监听地址，默认会自动使用 qB WebUi 网址，所以一般留空即可。例如：http://192.168.2.111:58000
+    # The server's listening address; by default it automatically uses the qB WebUI URL, so this can usually be left empty. E.g.: http://192.168.2.111:58000
     server_side_href = 
   ```
-
 

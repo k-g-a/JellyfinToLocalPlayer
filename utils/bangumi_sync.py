@@ -88,7 +88,7 @@ def bangumi_sync_plex(plex, bgm, plex_eps: list = None, rating_keys: list = None
     bgm: BangumiApiEmbyVer
     plex: PlexApi
 
-    # api 的原始数据，非解析后的
+    # raw data from the api, not parsed
     item_infos = [plex.get_metadata(i) for i in [_['rating_key'] for _ in plex_eps]] if plex_eps else [
         plex.get_metadata(i) for i in rating_keys]
     item_info = item_infos[0]
@@ -120,7 +120,7 @@ def bangumi_sync_plex(plex, bgm, plex_eps: list = None, rating_keys: list = None
 def search_and_sync(bgm, title, ori_title, premiere_date, season_num, ep_nums, emby_season_thread=None,
                     emby=None, eps_data=None):
     bgm_data = bgm.emby_search(title=title, ori_title=ori_title, premiere_date=premiere_date)
-    # 旧 api 可能返回第二季的数据，下面有 season_date_check，偷懒暂不处理
+    # the old api may return data for the second season; there's a season_date_check below, so leave it unhandled for now out of laziness
     if not bgm_data:
         logger.error(f'bgm: skip, bgm_data not found or not match\nbgm: {title=} {ori_title=} {premiere_date=}')
         return
@@ -138,7 +138,7 @@ def search_and_sync(bgm, title, ori_title, premiere_date, season_num, ep_nums, e
         if not is_emby:
             return
         logger.info('bgm: try math by ep air date')
-        if eps_data[0].get('item_id'):  # 解析过的，不含上映时间
+        if eps_data[0].get('item_id'):  # already parsed, doesn't include premiere date
             emby_ids = [i['item_id'] for i in eps_data]
             eps_data = emby.get_items(ids=emby_ids)['Items']
         try:
@@ -176,7 +176,7 @@ def search_and_sync(bgm, title, ori_title, premiere_date, season_num, ep_nums, e
 
 
 def get_emby_season_watched_ep_key(emby, eps_data, get_date=False, full_data=False):
-    if not emby.user_id:  # sync_via_stream_url 没有 user_id
+    if not emby.user_id:  # sync_via_stream_url has no user_id
         user_id = configs.get_server_api_by_ini(specify_host=emby.host).user_id
         if not user_id:
             logger.info('sync_via_stream_url: require setting user_id, see detail in FAQ')
@@ -214,7 +214,7 @@ def get_emby_season_watched_ep_key(emby, eps_data, get_date=False, full_data=Fal
 
 
 def bgm_check_ep_miss_mark(bgm, emby, eps_data, bgm_sea_id):
-    # 不支持 Plex。
+    # Plex is not supported.
     if not emby:
         return
     em_keys, em_dates = None, None
@@ -296,7 +296,7 @@ def api_client_via_stream_url(url):
     api_key = plex_token or query['api_key']
 
     if is_plex:
-        # 没找到好的媒体文件 key 反查条目的方法。
+        # No good way found to look up the entry from the media file key.
         # plex = PlexApi(host=f"{parsed_url.scheme}://{netloc}",
         #                api_key=api_key)
         # media_key = 'library/parts/3814/1687966436/file.mp4'
@@ -355,13 +355,13 @@ def mark_all_ep_done_series_as_played():
     print()
     pprint.pprint(is_done)
     while True:
-        user_input = input('\n以上是观看完成的列表。\n确认标记全部已观看请按回车或输入 yes: ').strip().lower()
+        user_input = input('\nThe above is the list of completed series.\nPress Enter or type "yes" to confirm marking all as watched: ').strip().lower()
         if user_input in ('', 'yes'):
             break
-        print('未确认，请输入 yes 或直接回车继续。')
-    print('正在标记观看，请稍后')
+        print('Not confirmed. Please type "yes" or press Enter to proceed.')
+    print('Marking as watched, please wait...')
     bgm.list_watching_is_done_subjects(mark_watched=True)
-    print('已全部标记完成')
+    print('All marked as watched.')
 
 if __name__ == '__main__':
     os.chdir(configs.cwd)

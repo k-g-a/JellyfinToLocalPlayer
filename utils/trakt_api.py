@@ -54,7 +54,7 @@ class TraktApi:
         return url
 
     def get_season_watched_via_ep_ids(self, ep_ids, get_keys=False):
-        # 若遇到未上映却实际看过时（个别平台提前播放），该数据会遗漏。此时只支持 get_keys，可能不准确
+        # If it hasn't aired yet but was actually watched (some platforms allow early playback), this data will be missing. In that case only get_keys is supported, which may be inaccurate
         # return { 'number': sea_num, 'episodes': {'number': ep_num, 'completed': Bool} }
         # get_keys return { '1-1', '1-2' ..}
         ep_ids = self.ids_to_ids_item(ep_ids, _type='episode')
@@ -63,11 +63,11 @@ class TraktApi:
         show_data = self.get_show_watched_progress(ser_id)
         sea_data = [i for i in show_data['seasons'] if i['number'] == season_num]
         if not sea_data:
-            if get_keys and show_data['aired'] == 0 and show_data['completed'] > 0:  # 提前播放
+            if get_keys and show_data['aired'] == 0 and show_data['completed'] > 0:  # aired early
                 sea_ids = self.get_series_single_season(ser_id=ser_id, season_num=season_num, info_only=True)
                 sea_history = self.get_watch_history(sea_ids['ids'], _type='season')
                 watch_eps = [i['episode']['number'] for i in sea_history if i.get('episode')]
-                # ^^^ 因为 i['action'] == watch，可能不准确
+                # ^^^ may be inaccurate since i['action'] == watch
                 watch_keys = [f'{season_num}-{i}' for i in watch_eps]
                 return watch_keys
             return None
@@ -104,12 +104,12 @@ class TraktApi:
 
     @functools.lru_cache
     def id_lookup(self, provider, _id, _type: typing.Literal['movie', 'show', 'episode'] = ''):
-        # 不支持 season
-        # 碰到通过 imdb id 查询若网络报错 500，可以用 tmdb id 查就正常。
-        # 报错 500 时用官方库 trakt.py Trakt['search'].lookup(_id, 'imdb') 查询一遍后，该 imdb id 再次查询也不报错了，原因未知。
+        # season is not supported
+        # If querying via imdb id results in a network 500 error, querying via tmdb id instead works fine.
+        # After a 500 error, using the official trakt.py library Trakt['search'].lookup(_id, 'imdb') once fixes subsequent queries for that imdb id too, reason unknown.
         api_suf = f'?type={_type}' if _type and provider != 'imdb' else ''
         if _type == 'movie' and provider == 'tvdb':
-            # tvdb 无法指定 type=movie 可能匹配错误，未核实是否一定返回电视剧。
+            # tvdb can't specify type=movie, which may cause mismatches; not verified whether it always returns a TV show.
             api_suf = ''
         allow = ['tvdb', 'tmdb', 'imdb', 'trakt']
         if provider not in allow:
@@ -119,8 +119,8 @@ class TraktApi:
             _res = res[0]
             res_type = _res['type']
             if  _type == 'episode' and provider == 'imdb':
-                # imdb 不能指定类型，集数的 imdb id 只能查到主条目，而不是分集。
-                if res_type != 'episode' : # 可能返回 show 类型，而不是 episode。
+                # imdb can't specify a type; an episode's imdb id can only find the main item, not the specific episode.
+                if res_type != 'episode' : # may return the show type instead of episode.
                     # print('trakt_api: id_lookup fail, cuz ep lookup not support imdb, require trakt id')
                     return []
             if _type == 'movie' and provider == 'tvdb':
@@ -129,8 +129,8 @@ class TraktApi:
         return res
 
     def ids_to_ids_item(self, ids, _type: typing.Literal['movie', 'show', 'episode'] = ''):
-        # 不支持 season, 因为 id_lookup 不支持
-        # 没有 imdb 时，最好指定 type 不然可能有误
+        # season is not supported, because id_lookup doesn't support it
+        # When there's no imdb id, it's best to specify type, otherwise it may be inaccurate
         if 'show' not in ids and 'movie' not in ids:
             provider = 'imdb' if ids.get('imdb') else 'trakt'
             ids = self.id_lookup(provider=provider, _id=ids[provider], _type=_type)
@@ -147,10 +147,10 @@ class TraktApi:
     def get_watch_history(self, ids_item, _type: typing.Literal['show', 'movie', 'episode', 'season'] = None) -> list:
         # id_lookup -> ids_item
         # get_single_season > ep_ids :not type field
-        # return 观看动作相关的历史列表。剧集无法判断是否完成观看。
+        # return the history list related to watch actions. It's impossible to determine whether an episode was fully watched.
         _type = ids_item.get('type') or _type
         path_type = f'{_type}s' if _type else ''
-        # 若没指定类型，返回的记录可能有误
+        # If the type isn't specified, the returned record may be inaccurate
         path_type = path_type or 'episodes'
         trakt_id = ids_item[_type]['ids']['trakt'] if ids_item.get(_type) else ids_item['trakt']
         res = self.get(f'users/{self.user_id}/history/{path_type}/{trakt_id}')
@@ -161,13 +161,13 @@ class TraktApi:
         return res
 
     def get_playback_progress(self):
-        # 应该是精确到分钟的
+        # Should be accurate to the minute
         res = self.get('sync/playback')
         return res
 
     def get_show_watched_progress(self, _id):
         # Trakt ID, Trakt slug, or IMDB ID
-        # 含有 aired 的数据，重置的 api 需要 vip
+        # Data containing "aired" requires vip for the reset api
         res = self.get(f'shows/{_id}/progress/watched')
         return res
 
@@ -182,7 +182,7 @@ class TraktApi:
         trakt_id = ids_item[_type]['ids']['trakt'] if ids_item.get(_type) else ids_item['trakt']
         res = self.get_show_watched_progress(trakt_id)
         aired, completed = res['aired'], res['completed']
-        # 不严谨，分季情况未区分。
+        # Not rigorous, per-season cases are not distinguished.
         if completed >= aired > 0:
             return res
 

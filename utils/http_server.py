@@ -70,9 +70,9 @@ class UserScriptRequestHandler(BaseHTTPRequestHandler):
             if data.get('showTaskManager'):
                 from utils.gui import show_task_manager
                 # multiprocessing.Process(target=show_task_manager, daemon=True).start()
-                # 多进程会复制 dl_manager 导致如果正在下载的话，会重复启动下载任务。
+                # multiprocessing would copy dl_manager, causing the download task to restart if one is already in progress.
                 threading.Thread(target=show_task_manager, daemon=True).start()
-                # tkinter 不是线程安全的，可能会导致退出。
+                # tkinter is not thread-safe, which may cause it to exit.
                 return True
             data = parse_received_data_emby(data) if self.path.startswith('/emby') else parse_received_data_plex(data)
             logger.info(f"server={data['server']}/{data.get('server_version')} {data['mount_disk_mode']=}")
@@ -287,7 +287,7 @@ def start_play(data):
     cmd = get_player_cmd(media_path=data['media_path'], file_path=file_path, data=data)
     player_path = cmd[0]
     player_path_lower = player_path.lower()
-    # 播放器特殊处理
+    # Special handling for player
     player_is_running = True if configs.raw.getboolean('dev', 'one_instance_mode', fallback=True) else False
     player_alias_dict = {'ddplay': 'dandanplay'}
     legal_player_name = list(start_player_func_dict) + list(player_alias_dict)
