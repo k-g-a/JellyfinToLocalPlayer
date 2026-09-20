@@ -2,8 +2,8 @@
 // @name         linkDoubanTrakt
 // @namespace    http://tampermonkey.net/
 // @version      2026.02.04
-// @description  在豆瓣和 trakt 之间增加跳转链接
-// @description:zh-CN 在豆瓣和 trakt 之间增加跳转链接
+// @description  Add jump links between Douban and Trakt
+// @description:zh-CN Add jump links between Douban and Trakt
 // @description:en  add trakt link on douban, and vice versa
 // @author       Kjtsune
 // @match        https://movie.douban.com/top250*
@@ -167,7 +167,7 @@ async function addDoubanLink() {
         const color = getComputedStyle(imdbA).color;
         a.style.setProperty('color', color, 'important');
         if (location.host.includes('app.trakt.tv')) {
-            a.textContent = doubanId ? '豆' : '!豆';
+            a.textContent = doubanId ? 'D' : '!D';
             imdbA.parentElement.parentElement.prepend(a);
         } else {
             imdbA.parentElement.prepend(a);

@@ -4,8 +4,8 @@
 // @name:en      embyDouban
 // @namespace    https://github.com/kjtsune/embyToLocalPlayer/tree/main/embyDouban
 // @version      2025.09.18
-// @description  emby 里展示: 豆瓣 Bangumi bgm.tv 评分 链接 标签 (豆瓣评论可关)
-// @description:zh-CN emby 里展示: 豆瓣 Bangumi bgm.tv 评分 链接 标签 (豆瓣评论可关)
+// @description  show in emby: Douban Bangumi bgm.tv ratings, links, tags (Douban comments can be disabled)
+// @description:zh-CN show in emby: Douban Bangumi bgm.tv ratings, links, tags (Douban comments can be disabled)
 // @description:en  show douban Bangumi ratings in emby
 // @author       Kjtsune
 // @match        *://*/web/index.html*
@@ -34,9 +34,9 @@
 
 let config = {
     logLevel: 2,
-    // 清除无效标签的正则匹配规则
+    // Regex rules for removing invalid tags
     tagsRegex: /\d{4}|TV|动画|小说|漫|轻改|游戏改|原创|[a-zA-Z]|日本/,
-    // 标签数量限制，填0禁用标签功能。
+    // Tag count limit; set to 0 to disable the tag feature.
     tagsNum: 5,
 };
 
@@ -58,7 +58,7 @@ function switchLocalStorage(key, defaultValue = 'false', trueValue = 'true', fal
     console.log('switchLocalStorage ', key, ' to ', localStorage.getItem(key))
 }
 
-function setModeSwitchMenu(storageKey, menuStart = '', menuEnd = '', defaultValue = '关闭', trueValue = '开启', falseValue = '关闭') {
+function setModeSwitchMenu(storageKey, menuStart = '', menuEnd = '', defaultValue = 'off', trueValue = 'on', falseValue = 'off') {
     let switchNameMap = { 'true': trueValue, 'false': falseValue, null: defaultValue };
     let menuId = GM_registerMenuCommand(menuStart + switchNameMap[localStorage.getItem(storageKey)] + menuEnd, clickMenu);
 
@@ -281,7 +281,7 @@ async function insertDoubanMain(linkZone) {
 
     let data = doubanDb.get(doubanId);
     if (!isEmpty(data) && data?.rating?.max) {
-        data = null; // 去除旧版数据
+        data = null; // remove legacy data
     }
     if (isEmpty(data)) {
         data = await getDoubanInfo(imdbId);
@@ -429,7 +429,7 @@ async function insertBangumiMain(infoTable, linkZone) {
     let originalTitle = itemInfo.OriginalTitle;
 
     let splitRe = /[／\/]/;
-    if (splitRe.test(originalTitle)) { //纸片人
+    if (splitRe.test(originalTitle)) { // 2D anime character
         logger.info(originalTitle);
         let zprTitle = originalTitle.split(splitRe);
         for (let _i in zprTitle) {
@@ -530,7 +530,7 @@ function cleanDoubanError() {
     logger.info(`cleanDoubanError done, count=${count}`);
 }
 
-setModeSwitchMenu('enableDoubanComment', '豆瓣评论已经', '', '开启')
+setModeSwitchMenu('enableDoubanComment', 'Douban comments are now ', '', 'on')
 var runLimit = 50;
 
 async function main() {

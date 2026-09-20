@@ -1,21 +1,21 @@
--- ############### 以下为可配置项 ###############
+-- ############### Configurable options below ###############
 
--- etlp 的保存目录，注意末尾要斜杠，并且所有斜杠都是 "/"。
+-- The etlp install directory. Note the trailing slash, and all slashes must be "/".
 local etlp_root_dir = "C:/Green/etlp-python-embed-win32/"
 
--- 若不用 pyton_embed，修改为自定义的 python 绝对路径，并安装 requests 依赖。
+-- If not using python_embed, change this to the absolute path of your own python and install the requests dependency.
 local etlp_python = etlp_root_dir .. "python_embed/python.exe"
 
--- 以下三行不要动。
+-- Do not modify the following three lines.
 local etlp_util_dir = etlp_root_dir .. "utils/"
 local etlp_bgm_sync_py = etlp_util_dir .. "bangumi_sync.py"
 local etlp_trakt_sync_py = etlp_util_dir .. "trakt_sync.py"
 
--- 启用的脚本列表，个别不启用就删掉，删掉的话记得逗号也删掉。
--- 记得修改 etlp 的 ini 配置文件，按域名启用，故默认都启用。
+-- List of enabled scripts. Delete any you do not want; remember to delete the comma too.
+-- Remember to also edit etlp ini config to enable per domain, so all are enabled here by default.
 local enable_srcipts = { etlp_bgm_sync_py, etlp_trakt_sync_py }
 
--- ############### 以上为可配置项 ###############
+-- ############### Configurable options above ###############
 
 local script_run = false
 local is_url = false

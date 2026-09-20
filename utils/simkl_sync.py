@@ -124,7 +124,7 @@ def sync_ep_or_movie_to_simkl(simkl, eps_data, emby):
         res = simkl.add_ep_or_movie_to_history(episodes=ep_ids)
         success_count = sum(res['added'][key] for key in ('movies', 'shows', 'episodes'))
         del res['added']['statuses']
-        # 效果一般，疑似 simkl 的单集 tvdb id 等并不齐全。
+        # effectiveness is mediocre; simkl per-episode tvdb ids etc. seem incomplete.
         logger.info(f'simkl: sync {success_count} item via {len(ep_ids)} pvd_ids {res}')
     return res
 

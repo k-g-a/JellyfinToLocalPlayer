@@ -260,7 +260,7 @@ def playlist_add_mpv(mpv: MPV, data, eps_data=None, limit=10):
         try:
             if configs.raw.getboolean('dev', 'mpv_ipc_playlist_data', fallback=False):
                 mpv.command('script-message', 'etlp-playlist-data', json.dumps(playlist_data, ensure_ascii=False))
-            mpv.wait_for_property('time-pos')  # 太早添加可能会导致播放第一个文件，而不是命令行指定文件。#193
+            mpv.wait_for_property('time-pos')  # adding too early may play the first file instead of the one specified on the command line. #193
             suf_thread = threading.Thread(target=loop_episodes, args=(suf_list,))
             pre_thread = threading.Thread(target=loop_episodes, args=(reversed(pre_list), True))
             _ = [suf_thread.start(), pre_thread.start()]

@@ -2,8 +2,8 @@
 // @name         qbittorrent_webui_open_file
 // @namespace    https://github.com/kjtsune/embyToLocalPlayer/tree/main/qbittorrent_webui_open_file
 // @version      0.3
-// @description  在 qBittorrent WebUI 里打开文件夹或者播放文件。
-// @description:zh-CN 在 qBittorrent WebUI 里打开文件夹或者播放文件。
+// @description  Open folder or play media file in qBittorrent WebUI.
+// @description:zh-CN Open folder or play media file in qBittorrent WebUI.
 // @description:en  open folder or play media file from qb webui.
 // @author       Kjtsune
 // @match        http://127.0.0.1:88*
@@ -20,7 +20,7 @@ function checkAndAddElement() {
     if (infoTable && !openButton) {
         let savePath = infoTable.querySelector('#save_path');
         savePath.insertAdjacentHTML('beforeBegin',
-            `<a id="openButton">打开</a> <span> </span> <a id="playButton">播放</a>`);
+            `<a id="openButton">Open</a> <span> </span> <a id="playButton">Play</a>`);
         let openButton = infoTable.querySelector('a#openButton');
         let playButton = infoTable.querySelector('a#playButton');
         openButton.addEventListener("click", openFolderFn, false);

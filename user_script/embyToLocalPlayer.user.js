@@ -4,7 +4,7 @@
 // @name:en      embyToLocalPlayer
 // @namespace    https://github.com/kjtsune/embyToLocalPlayer
 // @version      2026.02.11
-// @description  Emby/Jellyfin 调用外部本地播放器，并回传播放记录。适配 Plex。
+// @description  Emby/Jellyfin: play in an external local player and report playback progress back. Supports Plex.
 // @description:zh-CN Emby/Jellyfin 调用外部本地播放器，并回传播放记录。适配 Plex。
 // @description:en  Play in an external player. Update watch history to Emby/Jellyfin server. Support Plex.
 // @author       Kjtsune
@@ -35,11 +35,11 @@
     let fistTime = true;
     let config = {
         logLevel: 2,
-        disableOpenFolder: undefined, // undefined 改为 true 则禁用打开文件夹的按钮。
+        disableOpenFolder: undefined, // Change undefined to true to disable the open folder button.
         crackFullPath: undefined,
-        disableForLiveTv: undefined, // undefined 改为 true 则在浏览器里播放 IPTV。
-        enableResumeReorder: true, // true 改为 undefined 则禁用。继续观看的前2位不变, 余下近3天更新的前移。
-        resumeHideSomeSeries: undefined, // undefined 改为 true 则启用隐藏特定电视剧的油猴功能菜单。
+        disableForLiveTv: undefined, // Change undefined to true to play IPTV in the browser.
+        enableResumeReorder: true, // Change true to undefined to disable. Keeps the first 2 Continue Watching items, moves the rest updated within the last 3 days forward.
+        resumeHideSomeSeries: undefined, // Change undefined to true to enable the userscript menu for hiding specific TV series.
     };
 
     let etlpStorageKeys = {
@@ -110,7 +110,7 @@
             }
             let confGM = GM_getValue(confKey, null);
             if (confGM !== null) {
-                // 注意：etlpResumeHideSomeSeries 转换为 resumeHideSomeSeries。
+                // Note: etlpResumeHideSomeSeries is converted to resumeHideSomeSeries.
                 let _confKey = confKey.replace(/^etlp/, '');
                 _confKey = _confKey.charAt(0).toLowerCase() + _confKey.slice(1);
                 config[_confKey] = confGM;
@@ -120,7 +120,7 @@
         overwriteByKey(etlpStorageKeys.resumeHide);
     }
 
-    function playNotifiy(title = '正在播放', subtitle = '开始享受您的内容') {
+    function playNotifiy(title = 'Now Playing', subtitle = 'Enjoy your content') {
         if (!document.getElementById('play-notification-style')) {
             const style = document.createElement('style');
             style.id = 'play-notification-style';
@@ -186,7 +186,7 @@
                 let title = item.menuStart + item.switchNameMap[localStorage.getItem(item.storageKey)] + item.menuEnd;
                 id = GM_registerMenuCommand(title, () => {
                     switchLocalStorage(item.storageKey);
-                    registerAllMenus(); // 刷新菜单显示
+                    registerAllMenus(); // Refresh menu display
                 });
             } else if (item.type === 'callback') {
                 id = GM_registerMenuCommand(item.title, item.callback);
@@ -197,7 +197,7 @@
         });
     }
 
-    function setModeSwitchMenu(storageKey, menuStart = '', menuEnd = '', defaultValue = '关闭', trueValue = '开启', falseValue = '关闭') {
+    function setModeSwitchMenu(storageKey, menuStart = '', menuEnd = '', defaultValue = 'Off', trueValue = 'On', falseValue = 'Off') {
         let switchNameMap = { 'true': trueValue, 'false': falseValue, null: defaultValue };
 
         menuRegistry.push({
@@ -223,7 +223,7 @@
 
     function hideCurrentSeries() {
         const urlMatch = window.location.href.match(/id=(\d+)/);
-        let hint = '请在需要隐藏的电视剧【条目根页面】操作';
+        let hint = 'Please perform this action on the root item page of the TV series you want to hide';
         if (!urlMatch) {
             alert(hint);
             return;
@@ -241,7 +241,7 @@
             try {
                 hideList = JSON.parse(stored);
             } catch (e) {
-                logger.error('解析隐藏列表失败:', e);
+                logger.error('Failed to parse hide list:', e);
                 hideList = [];
             }
         }
@@ -249,17 +249,17 @@
         if (!hideList.includes(seriesId)) {
             hideList.push(seriesId);
             localStorage.setItem(etlpStorageKeys.hideSeriesIds, JSON.stringify(hideList));
-            logger.info('已隐藏电视剧, SeriesId:', seriesId);
-            alert(`已隐藏该电视剧，注意要电视剧条目主页面操作 SeriesId=${seriesId}`);
+            logger.info('Hidden TV series, SeriesId:', seriesId);
+            alert(`This TV series has been hidden. Note: this must be done on the series main item page. SeriesId=${seriesId}`);
         } else {
-            alert('该电视剧已在隐藏列表中');
+            alert('This TV series is already in the hide list');
         }
     }
 
     function resetHiddenSeries() {
         localStorage.removeItem(etlpStorageKeys.hideSeriesIds);
-        logger.info('已重置隐藏设置');
-        alert('已重置隐藏设置,刷新页面后生效');
+        logger.info('Hide settings have been reset');
+        alert('Hide settings have been reset, takes effect after refreshing the page');
     }
 
     function removeErrorWindows() {
@@ -316,8 +316,8 @@
                 'Content-Type': 'application/json'
             },
             onerror: function (error) {
-                alert(`${url}\n请求错误，本地服务未运行，请查看使用说明。\nhttps://github.com/kjtsune/embyToLocalPlayer`);
-                console.error('请求错误:', error);
+                alert(`${url}\nRequest error: the local server is not running. Please check the usage instructions.\nhttps://github.com/kjtsune/embyToLocalPlayer`);
+                console.error('Request error:', error);
             }
         });
         logger.info(path, data);
@@ -325,8 +325,8 @@
 
     let serverName = null;
     let episodesInfoCache = []; // ['type:[Episodes|NextUp|Items]', resp]
-    let episodesInfoRe = /\/Episodes\?IsVirtual|\/NextUp\?Series|\/Items\?ParentId=\w+&Filters=IsNotFolder&Recursive=true/; // Items已排除播放列表
-    // 点击位置：Episodes 继续观看，如果是即将观看，可能只有一集的信息 | NextUp 新播放或媒体库播放 | Items 季播放。 只有 Episodes 返回所有集的数据。
+    let episodesInfoRe = /\/Episodes\?IsVirtual|\/NextUp\?Series|\/Items\?ParentId=\w+&Filters=IsNotFolder&Recursive=true/; // Items already excludes playlists
+    // Click location: Episodes = Continue Watching; if it is Up Next, it may only contain one episode's info | NextUp = new playback or library playback | Items = season playback. Only Episodes returns data for all episodes.
     let playlistInfoCache = null;
     let resumeRawInfoCache = null;
     let resumePlaybackCache = {};
@@ -385,7 +385,7 @@
         let btn = mediaSources.querySelector('a#openFolderButton');
         if (strmFile) {
             pathDiv.innerHTML = pathDiv.innerHTML + '<br>' + strmFile;
-            full_path = strmFile; // emby 会把 strm 内的链接当路径展示
+            full_path = strmFile; // emby displays the link inside the strm as the path
         }
         btn.addEventListener('click', () => {
             logger.info(full_path);
@@ -406,18 +406,18 @@
         pathDivs = Array.from(pathDivs);
         let _pathDiv = pathDivs[0];
         if (_pathDiv.id == 'addFileNameElement') return;
-        let isAdmin = !/\d{4}\/\d+\/\d+/.test(_pathDiv.textContent); // 非管理员只有包含添加日期的文件类型 div
+        let isAdmin = !/\d{4}\/\d+\/\d+/.test(_pathDiv.textContent); // Non-admins only have a file type div containing the added date
         let isStrm = _pathDiv.textContent.startsWith('http');
         if (isAdmin) {
             if (!isStrm) { return; }
-            pathDivs = pathDivs.filter((_, index) => index % 2 === 0); // 管理员一个文件同时有路径和文件类型两个 div
+            pathDivs = pathDivs.filter((_, index) => index % 2 === 0); // For admins, one file has both a path div and a file type div
         }
 
         let sources = await resp.clone().json();
         sources = sources.MediaSources;
         for (let index = 0; index < pathDivs.length; index++) {
             const pathDiv = pathDivs[index];
-            let fileName = sources[index].Name; // 多版本的话，是版本名。
+            let fileName = sources[index].Name; // With multiple versions, this is the version name.
             let filePath = sources[index].Path;
             let strmFile = filePath.startsWith('http');
             if (!strmFile) {
@@ -439,14 +439,14 @@
         if (resumeIds.includes(itemId)) { return itemId; }
         let pageId = window.location.href.match(/\/item\?id=(\d+)/)?.[1];
         if (resumeIds.includes(pageId) && itemId == episodesInfoCache[0].Id) {
-            // 解决从继续观看进入集详情页时，并非播放第一集，却请求首集视频文件信息导致无法播放。
-            // 手动解决方法：从下方集卡片点击播放，或从集卡片再次进入集详情页后播放。
-            // 本函数的副作用：集详情页底部的第一集卡片点播放按钮会播放当前集。
-            // 副作用解决办法：再点击一次，或者点第一集卡片进入详情页后再播放。不过一般也不怎么会回头看第一集。
+            // Fix: when entering an episode detail page from Continue Watching, if it is not the first episode, the first episode's video file info gets requested, causing playback failure.
+            // Manual workaround: click play from the episode card below, or re-enter the episode detail page from the episode card and then play.
+            // Side effect of this function: clicking play on the first episode card at the bottom of the episode detail page will play the current episode.
+            // Workaround for the side effect: click again, or click the first episode card to enter its detail page before playing. Users rarely go back to the first episode anyway.
             return pageId;
 
         } else if (window.location.href.match(/serverId=/)) {
-            return itemId; // 仅处理首页继续观看和集详情页，其他页面忽略。
+            return itemId; // Only handle the home page Continue Watching and episode detail pages; ignore other pages.
         }
         let correctSeaId = episodesInfoCache.find(item => item.Id == itemId)?.SeasonId;
         let correctItemId = resumeRawInfoCache.find(item => item.SeasonId == correctSeaId)?.Id;
@@ -506,7 +506,7 @@
         }
         for (const cache of cacheList) {
             if (funName == 'getPlaybackInfo') {
-                // strm ffprobe 处理前后的外挂字幕 index 会变化，故不缓存。
+                // The external subtitle index changes before and after strm ffprobe processing, so do not cache.
                 let runtime = resInfo?.MediaSources?.[0]?.RunTimeTicks;
                 if (!runtime)
                     break;
@@ -534,7 +534,7 @@
         episodesInfoCache = episodesInfoCache[0] ? episodesInfoCache[1].clone() : null;
         let itemId = rawId;
         let [playbackData, mainEpInfo, episodesInfoData] = await Promise.all([
-            getPlaybackWithCace(itemId), // originFetch(raw_url, request), 可能会 NoCompatibleStream
+            getPlaybackWithCace(itemId), // originFetch(raw_url, request), may throw NoCompatibleStream
             getItemInfoWithCace(itemId),
             episodesInfoCache?.json(),
         ]);
@@ -621,7 +621,7 @@
         if (localStorage.getItem(etlpStorageKeys.webPlayerEnable) == 'true') { return; }
         // if (window.location.hash != '#!/home') { return; }
         const cardPlayBtn = e.target.closest('button.cardOverlayFab-primary[data-action="play"]');
-        // 最新电视和媒体库电视会是 "resume" 需要额外请求 nextup 获取季和集信息。但多版本会只返回一个版本。播放前又要请求多版本信息来确定。
+        // Latest TV and library TV will be "resume" and need an extra nextup request to get season/episode info. But multi-version only returns one version, so multi-version info must be requested again before playback.
         // const cardPlayBtn = e.target.closest('button.cardOverlayFab-primary[data-action="play"], button.cardOverlayFab-primary[data-action="resume"]');
         // const listPlayBtn = e.target.closest('button.listItem[data-id="resume"][data-action="custom"]');
         // const listShuffleBtn = e.target.closest('button.listItem[data-id="shuffle"][data-action="custom"]');
@@ -704,7 +704,7 @@
         }
     }
 
-    let itemInfoRe = /\/Items\/(\w+)\?/; // 要严格些，不然手动标记已播放 PlayedItems 也会命中，造成缓存错误数据。
+    let itemInfoRe = /\/Items\/(\w+)\?/; // Must be strict, otherwise manually marking as played (PlayedItems) would also match and cache wrong data.
 
     unsafeWindow.fetch = async (input, options) => {
         let isStrInput = typeof input === 'string';
@@ -725,7 +725,7 @@
                 logger.info('cleanOptionalCache by metadataMayChange')
             }
         }
-        // 适配播放列表及媒体库的全部播放、随机播放。会禁用版本筛选和美化标题。
+        // Adapt to playlist and library Play All / Shuffle. This disables version filtering and title beautification.
         if (urlStr.includes('Items?') && /Limit=(300|1000|5\d\d\d)/.test(urlStr)) {
             let _resp = await originFetch(input, options);
             if (serverName == 'emby') {
@@ -737,7 +737,7 @@
                     });
                     let viewsRegex = viewsIds.join('|');
                     viewsRegex = `ParentId=(${viewsRegex})`
-                    if (!RegExp(viewsRegex).test(urlStr)) { // 点击季播放美化标题所需，并非媒体库随机播放。
+                    if (!RegExp(viewsRegex).test(urlStr)) { // Needed for title beautification when clicking season play, not library shuffle.
                         episodesInfoCache = ['Items', _resp.clone()]
                         logger.info('episodesInfoCache', episodesInfoCache);
                         logger.info('viewsRegex', viewsRegex);
@@ -760,7 +760,7 @@
             }
             return _resp
         }
-        // 获取各集标题等，仅用于美化标题，放后面避免误拦截首页右键媒体库随机播放数据。
+        // Get episode titles etc., only used for title beautification; placed later to avoid mistakenly intercepting home page right-click library shuffle data.
         let _epMatch = urlStr.match(episodesInfoRe);
         if (_epMatch) {
             _epMatch = _epMatch[0].split(['?'])[0].substring(1); // Episodes|NextUp|Items
@@ -782,7 +782,7 @@
             let _resp = await originFetch(fetchInput, options);
             let _resd = await _resp.clone().json();
 
-            // 处理隐藏特定电视剧
+            // Handle hiding specific TV series
             if (config.resumeHideSomeSeries && _resd.Items && _resd.Items.length > 0) {
                 const hideListStr = localStorage.getItem(etlpStorageKeys.hideSeriesIds);
                 if (hideListStr) {
@@ -795,10 +795,10 @@
                         });
                         const hiddenCount = originalLength - _resd.Items.length;
                         if (hiddenCount > 0) {
-                            logger.info(`已隐藏 ${hiddenCount} 个电视剧条目`);
+                            logger.info(`Hidden ${hiddenCount} TV series items`);
                         }
                     } catch (e) {
-                        logger.error('解析隐藏列表失败:', e);
+                        logger.error('Failed to parse hide list:', e);
                     }
                 }
             }
@@ -819,7 +819,7 @@
                     }
                 });
                 _resd.Items = [...firstTwo, ...recentItems, ...olderItems];
-                logger.info(`重排序完成: 前2位保持, ${recentItems.length}个近3天项目前移, ${olderItems.length}个旧项目后移`);
+                logger.info(`Reorder done: first 2 kept, ${recentItems.length} items from the last 3 days moved forward, ${olderItems.length} older items moved back`);
             }
 
             const modifiedBody = JSON.stringify(_resd);
@@ -835,7 +835,7 @@
 
             return modifiedResponse;
         }
-        // 缓存 itemInfo ，可能匹配到 Items/Resume，故放后面。
+        // Cache itemInfo; it may also match Items/Resume, so it is placed later.
         if (urlStr.match(itemInfoRe)) {
             let itemId = urlStr.match(itemInfoRe)[1];
             let resp = await originFetch(input, options);
@@ -851,7 +851,7 @@
                 } else {
                     let itemId = urlStr.match(/\/Items\/(\w+)\/PlaybackInfo/)[1];
                     let resp = await originFetch(input, options);
-                    addFileNameElement(resp.clone()); // itemId data 不包含多版本的文件信息，故用不到
+                    addFileNameElement(resp.clone()); // itemId data does not contain multi-version file info, so it is not used
                     addOpenFolderElement(itemId);
                     logger.info(`CACHE allPlaybackCache itemId=${itemId}`);
                     cloneAndCacheFetch(resp.clone(), itemId, allPlaybackCache);
@@ -948,24 +948,24 @@
 
     initXMLHttpRequest();
 
-    setModeSwitchMenu(etlpStorageKeys.webPlayerEnable, '脚本在当前服务器 已', '', '可用', '禁用', '可用');
-    setModeSwitchMenu(etlpStorageKeys.mountDiskEnable, '读取硬盘模式已经 ');
+    setModeSwitchMenu(etlpStorageKeys.webPlayerEnable, 'Script on this server is ', '', 'Available', 'Disabled', 'Available');
+    setModeSwitchMenu(etlpStorageKeys.mountDiskEnable, 'Read disk mode is ');
 
     function showGuiMenu() {
         sendDataToLocalServer({ 'showTaskManager': true }, 'embyToLocalPlayer');
     }
     if ('etlpTaskManager' in localStorage) {
-        setCallbackMenu('查看缓存任务', showGuiMenu);
+        setCallbackMenu('View cache tasks', showGuiMenu);
     }
 
     overwriteConfByStore();
 
     if (config.resumeHideSomeSeries || localStorage.getItem(etlpStorageKeys.resumeHide) === 'true') {
-        setCallbackMenu('继续播放: 隐藏该电视剧', hideCurrentSeries);
-        setCallbackMenu('继续播放: 重置隐藏设置', resetHiddenSeries);
+        setCallbackMenu('Continue Watching: Hide this TV series', hideCurrentSeries);
+        setCallbackMenu('Continue Watching: Reset hide settings', resetHiddenSeries);
     }
 
-    // let debounceTimer; # 有的 css 选择器比较宽泛，播放后再检测比较稳妥。
+    // let debounceTimer; # Some CSS selectors are broad, so checking after playback is safer.
     // const observer = new MutationObserver(() => {
     //     clearTimeout(debounceTimer);
     //     debounceTimer = setTimeout(removeErrorWindows, 100);

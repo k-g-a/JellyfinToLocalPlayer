@@ -13,7 +13,7 @@ script_folder=$(dirname "$(realpath_function "$0")")
 echo run in "$script_folder"
 cd "$script_folder" || (echo cd faild && exit)
 
-#后台运行
+# run in background
 screen_name="etlp"
 
 if [ $(screen -ls | grep -c $screen_name) -ne 0 ]; then 

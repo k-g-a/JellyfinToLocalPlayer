@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         embyEverywhere
 // @description  add Emby search result in many sites。eg: imdb.com trakt.tv tmdb tvdb
-// @description:zh-CN   在许多网站上添加 Emby 跳转链接。例如: bgm.tv douban imdb tmdb tvdb trakt
+// @description:zh-CN   Add Emby jump links on many websites. e.g.: bgm.tv douban imdb tmdb tvdb trakt
 // @namespace    https://github.com/kjtsune/embyToLocalPlayer
 // @version      2025.11.04
 // @author       Kjtsune
@@ -51,17 +51,17 @@ let embyServerDatas = [
         url: 'http://192.168.1.1:8096',
         userName: 'guest',
         passWord: 'pw',
-        apiKey: '', // 如果填了用户名和密码，apiKey 可以不用。
+        apiKey: '', // If userName and passWord are filled in, apiKey can be left empty.
     },
     {
-        name: '公益服A',
-        url: 'https://free.lan:443', // https 端口也要填。
+        name: 'PublicServerA',
+        url: 'https://free.lan:443', // The https port must also be filled in.
         userName: '',
         passWord: '',
-        apiKey: '8cg0aqtytc7nhvwgycjqiw2kobgne2jk', // 也可以只填 apiKey
+        apiKey: '8cg0aqtytc7nhvwgycjqiw2kobgne2jk', // You can also fill in only apiKey
     },
     {
-        name: '公益服B', // 有几个服就填几份了。
+        name: 'PublicServerB', // Add one entry for each server you have.
         url: 'http://example.local:80',
         userName: '',
         passWord: '',
@@ -70,17 +70,17 @@ let embyServerDatas = [
 ]
 
 let config = {
-    // saveSettigs 的 false 改成 true 后会将上方配置保存到油猴插件设置存储里。避免脚本升级时丢失配置。
-    // 存储里的配置会比上方手写的配置优先。所以若更新配置，记得改成 true 覆盖旧配置。
-    // 手动清空存储的方法：油猴插件 -> 本脚本 -> 编辑 -> 存储 -> 清空内容（上下大括号{}需要保留）/ 或只删除 script|saveStings 那行。
-    // 自己也备份一下上方的配置，会比较稳妥。
+    // Changing saveSettigs from false to true saves the config above into the userscript manager's settings storage, to avoid losing it on script updates.
+    // The stored config takes priority over the handwritten config above. So when updating the config, remember to set it to true to overwrite the old config.
+    // How to clear the storage manually: userscript manager -> this script -> Edit -> Storage -> clear the content (keep the surrounding curly braces {}) / or just delete the script|saveStings line.
+    // It's also safer to back up the config above yourself.
     saveSettigs: false,
     logLevel: 2,
 };
 
 let logger = new MyLogger(config)
 
-// 以下为测试功能，不用管他
+// The following is a test feature, no need to worry about it
 
 let tmdbToken = '';
 (() => {
@@ -109,8 +109,8 @@ let traktTkoenObj, traktSettings;
 //     clientSecret: '',
 //     traktTkoenObj: traktTkoenObj,
 // }
-// 参考 etlp 脚本里 trakt sync 功能。
-// traktTkoenObj 是其生成的 trakt_token.json
+// Refer to the trakt sync feature in the etlp script.
+// traktTkoenObj is the trakt_token.json it generates
 
 // settings end
 
@@ -242,7 +242,7 @@ async function doubanPlayedByTrakt() {
     if (!watchedState && watchedData.aired) {
         watchedStr = ` ${((watchedData.completed / watchedData.aired) * 100).toFixed(0)}%`
     }
-    imdbA.previousElementSibling.insertAdjacentHTML('beforebegin', `<span class="pl">看过:</span>${watchedStr} ${watchedEmoji}<br>`);
+    imdbA.previousElementSibling.insertAdjacentHTML('beforebegin', `<span class="pl">Watched:</span>${watchedStr} ${watchedEmoji}<br>`);
 }
 
 class ProviderIdsAdder {
@@ -371,16 +371,16 @@ class ProviderIdsAdder {
         const directSpans = Array.from(newElement.querySelectorAll(':scope > span'));
         directSpans.forEach(span => {
             const text = span.textContent.trim();
-            // 判断是评分 span（包含数字和斜杠）
+            // Check if it's the score span (contains digits and a slash)
             if (/^\d+(\.\d+)?\/\d+$/.test(text)) {
                 span.textContent = provScore;
             } else if (span.hasAttribute('title')) {
                 span.textContent = provName;
                 span.setAttribute('title', provName);
             }
-            // 跳过分隔符 span（内容是 · 或其他单字符）
+            // Skip separator spans (content is · or another single character)
             else if (text.length <= 3 && !/[a-zA-Z0-9]/.test(text)) {
-                // 保持不变
+                // Keep unchanged
             }
         });
         const descriptionSpan = newElement.querySelector('div > div > span');
@@ -418,7 +418,7 @@ class ProviderIdsAdder {
             newEl.setAttribute('add-by', 'providerIdsAdder');
 
             templateEl.parentNode.insertBefore(newEl, templateEl.nextSibling);
-            // 更新 templateEl 为新插入的元素，这样下一个会插在它后面
+            // Update templateEl to the newly inserted element, so the next one is inserted after it
             templateEl = newEl;
         });
     }
@@ -515,7 +515,7 @@ class EmbyLinkAdder {
                 if (title.parentElement) {
                     title = title.parentElement;
                 } else {
-                    break; // 防止超出 DOM 层级
+                    break; // Prevent exceeding the DOM hierarchy
                 }
             }
         }
@@ -533,7 +533,7 @@ class EmbyLinkAdder {
     }
 
     whiteTitleAdder(data) {
-        // 这个 class 是 imdb 的，不过应该没副作用。
+        // This class belongs to imdb, but it should have no side effects.
         let extHtml = ' class="ipc-link--baseAlt" style="color: white;"';
         this.titleAdder(data, extHtml, 'beforebegin'); // afterend
     }
@@ -884,7 +884,7 @@ async function googleTitlePage() {
 async function embySearchOtherVerVideo() {
     let itemId = /\?id=(\w+)/.exec(window.location.hash);
     if (!itemId) {
-        alert('未找到 itemId, 请在 Emby 条目页面中搜索')
+        alert('itemId not found, please search on an Emby item page')
         return;
     }
     itemId = itemId[1];
@@ -905,7 +905,7 @@ async function embySearchOtherVerVideo() {
 }
 
 async function embyItemPage() {
-    GM_registerMenuCommand('Emby: 搜索其他相同条目', embySearchOtherVerVideo);
+    GM_registerMenuCommand('Emby: Search for other versions of this item', embySearchOtherVerVideo);
 }
 
 async function main() {
