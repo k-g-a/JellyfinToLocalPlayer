@@ -57,12 +57,16 @@ general-purpose userscript extension access to browser pages.
 2. Create an injector entry and paste the complete contents of
    [`user_script/embyToLocalPlayer.injector.js`](user_script/embyToLocalPlayer.injector.js) into it.
 3. Enable the entry and refresh Jellyfin Web.
-4. Start the local Python service before pressing Play.
+4. Configure the two local players in `embyToLocalPlayer_config.ini`:
+   * `player_madvr` selects the executable used by the **madVR** button.
+   * `player_dolby_vision` selects the executable used by the **Dolby Vision** button.
+5. Start the local Python service. The two buttons appear beside Jellyfin's own Play button while the service is
+   reachable; they disappear when it is not running.
 
-The injector build is self-contained and does not load JavaScript from a third-party URL. It sends commands directly
-to `http://127.0.0.1:58000` without a JSON `Content-Type`, which keeps the request CORS-safelisted for the current ETLP
-HTTP server. Disk-read mode is enabled and Jellyfin Web playback is disabled by default in this build; configure
-`[src]` and `[dst]` for the server-to-local path mapping.
+The injector build is self-contained and does not load JavaScript from a third-party URL. It does not replace
+`window.fetch`, `XMLHttpRequest`, Jellyfin's Play action, or browser prototypes. It uses Jellyfin's `ApiClient` only
+when an ETLP button is pressed, then sends the resulting playback data directly to `http://127.0.0.1:58000`.
+Disk-read mode is enabled for these two actions; configure `[src]` and `[dst]` for the server-to-local path mapping.
 
 > Before you begin
 

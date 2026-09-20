@@ -18,7 +18,7 @@ from utils.players import start_player_func_dict, stop_sec_func_dict
 from utils.simkl_sync import simkl_api_client
 from utils.tools import (configs, MyLogger, open_local_folder, play_media_file,
                          activate_window_by_pid, get_player_cmd, ThreadWithReturnValue,
-                         create_sparse_file)
+                         create_sparse_file, get_player_profile_map)
 from utils.trakt_sync import trakt_api_client
 
 player_is_running = False
@@ -53,10 +53,16 @@ def run_server(ip='127.0.0.1', port=58000):
 
 class UserScriptRequestHandler(BaseHTTPRequestHandler):
 
+    def _send_cors_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Private-Network', 'true')
+
     def _post_resopne(self, msg=None, status=200):
         self.send_response(status)
         self.send_header('Content-type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
+        self._send_cors_headers()
         self.end_headers()
         msg = msg or {'msg': 'default'}
         self.wfile.write(json.dumps(msg).encode('utf-8'))
@@ -66,6 +72,13 @@ class UserScriptRequestHandler(BaseHTTPRequestHandler):
         data = json.loads(self.rfile.read(length))
         configs.update()
         if 'ToLocalPlayer' in self.path:
+            player_profile = data.get('playerProfile')
+            if player_profile and player_profile not in get_player_profile_map():
+                self._post_resopne(
+                    {'error': f'Player profile {player_profile!r} is not configured.'},
+                    status=400,
+                )
+                return
             self._post_resopne()
             if data.get('showTaskManager'):
                 from utils.gui import show_task_manager
@@ -131,9 +144,24 @@ class UserScriptRequestHandler(BaseHTTPRequestHandler):
             self._post_resopne({'msg': f'{self.path} not allow'})
 
     def do_OPTIONS(self):
-        pass
+        self.send_response(204)
+        self._send_cors_headers()
+        self.end_headers()
 
     def do_GET(self):
+        if self.path == '/etlp/status':
+            configs.update()
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Cache-Control', 'no-store')
+            self._send_cors_headers()
+            self.end_headers()
+            self.return_json({
+                'service': 'JellyfinToLocalPlayer',
+                'ready': True,
+                'playerProfiles': sorted(get_player_profile_map()),
+            })
+            return
         if self.path in ['/', '/favicon.ico']:
             self.send_response(200)
             self.end_headers()
