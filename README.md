@@ -47,6 +47,23 @@ etlp - Use Emby/Jellyfin to launch PotPlayer mpv IINA MPC VLC for playback, and 
       Install Python (check add to path) [Official site](https://www.python.org/downloads/)
       Edit the config file: set the player path and player selection in `embyToLocalPlayer_config.ini`.
 
+> Jellyfin JavaScript Injector setup
+
+Jellyfin users can install the script through the server-side
+[JavaScript Injector plugin](https://github.com/n00bcodr/Jellyfin-JavaScript-Injector) instead of granting a
+general-purpose userscript extension access to browser pages.
+
+1. Install JavaScript Injector on the Jellyfin server.
+2. Create an injector entry and paste the complete contents of
+   [`user_script/embyToLocalPlayer.injector.js`](user_script/embyToLocalPlayer.injector.js) into it.
+3. Enable the entry and refresh Jellyfin Web.
+4. Start the local Python service before pressing Play.
+
+The injector build is self-contained and does not load JavaScript from a third-party URL. It sends commands directly
+to `http://127.0.0.1:58000` without a JSON `Content-Type`, which keeps the request CORS-safelisted for the current ETLP
+HTTP server. Disk-read mode is enabled and Jellyfin Web playback is disabled by default in this build; configure
+`[src]` and `[dst]` for the server-to-local path mapping.
+
 > Before you begin
 
 * The webpage flashing briefly means it is automatically dismissing the compatible-stream prompt.
@@ -623,8 +640,9 @@ https://github.com/kjtsune/embyToLocalPlayer#faq
   ```
   # Server information, comma-separated within each entry, with each entry ending in a semicolon. If you need multiple servers, continue writing after the semicolon.
   # api_key: Settings > API Keys. user_id: Settings > Users > [username] > look at the browser URL.
-  server_data_group = myself, http://localhost:8096, api_key, user_id;
-                      others, https://www.abc.org, api_key, user_id;
+  # The final server type is optional and defaults to emby. Set it to jellyfin for Jellyfin 12+.
+  server_data_group = myself, http://localhost:8096, api_key, user_id, jellyfin;
+                      others, https://www.abc.org, api_key, user_id, emby;
   # Format: server name from the config above, followed by one or more server-side media path prefixes; multiple servers are also separated by semicolons.
   # Prefetch only when the server path contains the path prefix; use / for all paths
   # strm is a special value used only to scrape media duration information. In this mode, release time and path limits are ignored.

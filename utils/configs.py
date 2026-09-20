@@ -327,18 +327,20 @@ class Configs:
     def get_server_api_by_ini(self, specify='', use_thin_api=True, get_dict=True, specify_host=''):
         server_list = self.ini_str_split('dev', 'server_data_group', split_by=';', re_split_by=',')
         api_dict = {}
-        for server in server_list:
-            server_name, host, api_key, user_id = server
+        for server_config in server_list:
+            server_name, host, api_key, user_id, *server_type_config = server_config
+            server_type = server_type_config[0].lower() if server_type_config else 'emby'
             if specify and specify != server_name:
                 continue
             if specify_host and specify_host not in host:
                 continue
             if use_thin_api:
                 from utils.emby_api_thin import EmbyApiThin
-                api = EmbyApiThin(data=None, host=host, api_key=api_key, user_id=user_id)
+                api = EmbyApiThin(data=None, host=host, api_key=api_key, user_id=user_id, server=server_type)
             else:
                 from utils.emby_api import EmbyApi
                 api = EmbyApi(host=host, api_key=api_key, user_id=user_id,
+                              server=server_type,
                               http_proxy=self.script_proxy,
                               cert_verify=(
                                   not self.raw.getboolean('dev', 'skip_certificate_verify', fallback=False)), )

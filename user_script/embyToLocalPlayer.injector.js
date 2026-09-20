@@ -1,32 +1,6 @@
-// ==UserScript==
-// @name         embyToLocalPlayer
-// @name:zh-CN   embyToLocalPlayer
-// @name:en      embyToLocalPlayer
-// @namespace    https://github.com/kjtsune/embyToLocalPlayer
-// @version      2026.02.11
-// @description  Emby/Jellyfin: play in an external local player and report playback progress back. Supports Plex.
-// @description:zh-CN Emby/Jellyfin 调用外部本地播放器，并回传播放记录。适配 Plex。
-// @description:en  Play in an external player. Update watch history to Emby/Jellyfin server. Support Plex.
-// @author       Kjtsune
-// @match        *://*/web/index.html*
-// @match        *://*/*/web/index.html*
-// @match        *://*/web/
-// @match        *://*/*/web/
-// @match        https://app.emby.media/*
-// @match        https://app.plex.tv/*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=emby.media
-// @grant        unsafeWindow
-// @grant        GM_info
-// @grant        GM_xmlhttpRequest
-// @grant        GM_registerMenuCommand
-// @grant        GM_unregisterMenuCommand
-// @grant        GM_getValue
-// @grant        GM_setValue
-// @grant        GM_deleteValue
-// @run-at       document-start
-// @connect      127.0.0.1
-// @license MIT
-// ==/UserScript==
+// embyToLocalPlayer build for Jellyfin JavaScript Injector.
+// Paste this complete file into an injector entry; no userscript manager is required.
+// Based on the upstream 2026.02.11 userscript. License: MIT.
 'use strict';
 /*global ApiClient*/
 
@@ -35,11 +9,11 @@
     let fistTime = true;
     let config = {
         logLevel: 2,
-        disableOpenFolder: undefined, // Change undefined to true to disable the open folder button.
+        disableOpenFolder: undefined, // Change undefined to true to disable the Open Folder button.
         crackFullPath: undefined,
-        disableForLiveTv: undefined, // Change undefined to true to play IPTV in the browser.
-        enableResumeReorder: true, // Change true to undefined to disable. Keeps the first 2 Continue Watching items, moves the rest updated within the last 3 days forward.
-        resumeHideSomeSeries: undefined, // Change undefined to true to enable the userscript menu for hiding specific TV series.
+        disableForLiveTv: undefined, // Change undefined to true to play IPTV in Jellyfin Web.
+        enableResumeReorder: true, // Change true to undefined to disable. Keep the first 2 items, then move items added in the last 3 days forward.
+        resumeHideSomeSeries: undefined, // Change undefined to true to enable hiding selected series.
     };
 
     let etlpStorageKeys = {
@@ -50,6 +24,19 @@
         cacheResumeIds: 'etlpCacheResumeIds',
         hideSeriesIds: 'etlpResumeHideSeriesIds',
     }
+
+    const injectorScriptInfo = {
+        script: {
+            name: 'embyToLocalPlayer JavaScript Injector',
+            version: '2026.02.11',
+        },
+        scriptHandler: 'Jellyfin JavaScript Injector',
+        version: 'page-context',
+    };
+
+    // This build is dedicated to local/SMB playback. Remove the injected script to restore Jellyfin Web playback.
+    localStorage.setItem(etlpStorageKeys.mountDiskEnable, 'true');
+    localStorage.removeItem(etlpStorageKeys.webPlayerEnable);
 
     const originFetch = fetch;
 
@@ -102,25 +89,19 @@
         function overwriteByKey(confKey) {
             let confLocal = localStorage.getItem(confKey);
             if (confLocal == null) return;
-            if (confLocal == 'true') {
-                GM_setValue(confKey, true);
-
-            } else if (confLocal == 'false') {
-                GM_setValue(confKey, false);
-            }
-            let confGM = GM_getValue(confKey, null);
-            if (confGM !== null) {
-                // Note: etlpResumeHideSomeSeries is converted to resumeHideSomeSeries.
+            if (confLocal == 'true' || confLocal == 'false') {
+                let storedValue = confLocal == 'true';
+                // Convert etlpResumeHideSomeSeries to resumeHideSomeSeries.
                 let _confKey = confKey.replace(/^etlp/, '');
                 _confKey = _confKey.charAt(0).toLowerCase() + _confKey.slice(1);
-                config[_confKey] = confGM;
+                config[_confKey] = storedValue;
             };
         }
         overwriteByKey(etlpStorageKeys.crackFullPath);
         overwriteByKey(etlpStorageKeys.resumeHide);
     }
 
-    function playNotifiy(title = 'Now Playing', subtitle = 'Enjoy your content') {
+    function playNotifiy(title = 'Now playing', subtitle = 'Opening in your local player') {
         if (!document.getElementById('play-notification-style')) {
             const style = document.createElement('style');
             style.id = 'play-notification-style';
@@ -160,106 +141,6 @@
             notification.style.animation = 'slideOut 0.5s ease-in';
             setTimeout(() => notification.remove(), 500);
         }, 3000);
-    }
-
-    let menuRegistry = [];
-    let registeredMenus = [];
-
-    function switchLocalStorage(key, defaultValue = 'true', trueValue = 'true', falseValue = 'false') {
-        if (key in localStorage) {
-            let value = (localStorage.getItem(key) === trueValue) ? falseValue : trueValue;
-            localStorage.setItem(key, value);
-        } else {
-            localStorage.setItem(key, defaultValue);
-        }
-        logger.info('switchLocalStorage', key, 'to', localStorage.getItem(key));
-    }
-
-    function registerAllMenus() {
-        registeredMenus.forEach(id => GM_unregisterMenuCommand(id));
-        registeredMenus = [];
-
-        menuRegistry.forEach(item => {
-            let id;
-
-            if (item.type === 'switch') {
-                let title = item.menuStart + item.switchNameMap[localStorage.getItem(item.storageKey)] + item.menuEnd;
-                id = GM_registerMenuCommand(title, () => {
-                    switchLocalStorage(item.storageKey);
-                    registerAllMenus(); // Refresh menu display
-                });
-            } else if (item.type === 'callback') {
-                id = GM_registerMenuCommand(item.title, item.callback);
-            }
-
-            registeredMenus.push(id);
-            item.menuId = id;
-        });
-    }
-
-    function setModeSwitchMenu(storageKey, menuStart = '', menuEnd = '', defaultValue = 'Off', trueValue = 'On', falseValue = 'Off') {
-        let switchNameMap = { 'true': trueValue, 'false': falseValue, null: defaultValue };
-
-        menuRegistry.push({
-            type: 'switch',
-            storageKey,
-            menuStart,
-            menuEnd,
-            switchNameMap
-        });
-
-        registerAllMenus();
-    }
-
-    function setCallbackMenu(title, callback) {
-        menuRegistry.push({
-            type: 'callback',
-            title,
-            callback
-        });
-
-        registerAllMenus();
-    }
-
-    function hideCurrentSeries() {
-        const urlMatch = window.location.href.match(/id=(\d+)/);
-        let hint = 'Please perform this action on the root item page of the TV series you want to hide';
-        if (!urlMatch) {
-            alert(hint);
-            return;
-        }
-
-        const seriesId = urlMatch[1];
-        if (!seriesId) {
-            alert(hint);
-            return;
-        }
-
-        let hideList = [];
-        const stored = localStorage.getItem(etlpStorageKeys.hideSeriesIds);
-        if (stored) {
-            try {
-                hideList = JSON.parse(stored);
-            } catch (e) {
-                logger.error('Failed to parse hide list:', e);
-                hideList = [];
-            }
-        }
-
-        if (!hideList.includes(seriesId)) {
-            hideList.push(seriesId);
-            localStorage.setItem(etlpStorageKeys.hideSeriesIds, JSON.stringify(hideList));
-            logger.info('Hidden TV series, SeriesId:', seriesId);
-            alert(`This TV series has been hidden. Note: this must be done on the series main item page. SeriesId=${seriesId}`);
-        } else {
-            alert('This TV series is already in the hide list');
-        }
-    }
-
-    function resetHiddenSeries() {
-        localStorage.removeItem(etlpStorageKeys.hideSeriesIds);
-        logger.info('Hide settings have been reset');
-        alert('Hide settings have been reset, takes effect after refreshing the page');
     }
 
     function removeErrorWindows() {
@@ -308,17 +189,14 @@
 
     function sendDataToLocalServer(data, path) {
         let url = `http://127.0.0.1:58000/${path}/`;
-        GM_xmlhttpRequest({
+        // Do not set Content-Type: application/json here. A safelisted request avoids a CORS preflight,
+        // while the ETLP server reads and parses the request body independently of that header.
+        originFetch(url, {
             method: 'POST',
-            url: url,
-            data: JSON.stringify(data),
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            onerror: function (error) {
-                alert(`${url}\nRequest error: the local server is not running. Please check the usage instructions.\nhttps://github.com/kjtsune/embyToLocalPlayer`);
-                console.error('Request error:', error);
-            }
+            body: JSON.stringify(data),
+        }).catch(function (error) {
+            alert(`${url}\nRequest failed. Make sure the local service is running.\nhttps://github.com/k-g-a/JellyfinToLocalPlayer`);
+            console.error('ETLP request failed:', error);
         });
         logger.info(path, data);
     }
@@ -340,8 +218,9 @@
     }
 
     let episodesInfoCache = []; // ['type:[Episodes|NextUp|Items]', resp]
-    let episodesInfoRe = /\/Episodes\?IsVirtual|\/NextUp\?Series|\/Items\?ParentId=\w+&Filters=IsNotFolder&Recursive=true/; // Items already excludes playlists
-    // Click location: Episodes = Continue Watching; if it is Up Next, it may only contain one episode's info | NextUp = new playback or library playback | Items = season playback. Only Episodes returns data for all episodes.
+    let episodesInfoRe = /\/Episodes\?IsVirtual|\/NextUp\?Series|\/Items\?ParentId=\w+&Filters=IsNotFolder&Recursive=true/; // Items excludes playlists.
+    // Click sources: Episodes for Continue Watching (Next Up may contain only one episode),
+    // NextUp for new/library playback, and Items for season playback. Only Episodes returns every episode.
     let playlistInfoCache = null;
     let resumeRawInfoCache = null;
     let resumePlaybackCache = {};
@@ -394,13 +273,13 @@
         let itemData = (itemId in allItemDataCache) ? allItemDataCache[itemId] : null
         let strmFile = (full_path.startsWith('http')) ? itemData?.Path : null
 
-        let openButtonHtml = `<a id="openFolderButton" is="emby-linkbutton" class="raised item-tag-button 
+        let openButtonHtml = `<a id="openFolderButton" is="emby-linkbutton" class="raised item-tag-button
         nobackdropfilter emby-button" ><i class="md-icon button-icon button-icon-left">link</i>Open Folder</a>`
         pathDiv.insertAdjacentHTML('beforebegin', openButtonHtml);
         let btn = mediaSources.querySelector('a#openFolderButton');
         if (strmFile) {
             pathDiv.innerHTML = pathDiv.innerHTML + '<br>' + strmFile;
-            full_path = strmFile; // emby displays the link inside the strm as the path
+            full_path = strmFile; // Emby displays the URL inside a strm file as its path.
         }
         btn.addEventListener('click', () => {
             logger.info(full_path);
@@ -421,18 +300,18 @@
         pathDivs = Array.from(pathDivs);
         let _pathDiv = pathDivs[0];
         if (_pathDiv.id == 'addFileNameElement') return;
-        let isAdmin = !/\d{4}\/\d+\/\d+/.test(_pathDiv.textContent); // Non-admins only have a file type div containing the added date
+        let isAdmin = !/\d{4}\/\d+\/\d+/.test(_pathDiv.textContent); // Non-admins only see a file-type div containing the added date.
         let isStrm = _pathDiv.textContent.startsWith('http');
         if (isAdmin) {
             if (!isStrm) { return; }
-            pathDivs = pathDivs.filter((_, index) => index % 2 === 0); // For admins, one file has both a path div and a file type div
+            pathDivs = pathDivs.filter((_, index) => index % 2 === 0); // Admins see both path and file-type divs for each file.
         }
 
         let sources = await resp.clone().json();
         sources = sources.MediaSources;
         for (let index = 0; index < pathDivs.length; index++) {
             const pathDiv = pathDivs[index];
-            let fileName = sources[index].Name; // With multiple versions, this is the version name.
+            let fileName = sources[index].Name; // This is the version name when multiple versions exist.
             let filePath = sources[index].Path;
             let strmFile = filePath.startsWith('http');
             if (!strmFile) {
@@ -454,14 +333,14 @@
         if (resumeIds.includes(itemId)) { return itemId; }
         let pageId = window.location.href.match(/\/item\?id=(\d+)/)?.[1];
         if (resumeIds.includes(pageId) && itemId == episodesInfoCache[0].Id) {
-            // Fix: when entering an episode detail page from Continue Watching, if it is not the first episode, the first episode's video file info gets requested, causing playback failure.
-            // Manual workaround: click play from the episode card below, or re-enter the episode detail page from the episode card and then play.
-            // Side effect of this function: clicking play on the first episode card at the bottom of the episode detail page will play the current episode.
-            // Workaround for the side effect: click again, or click the first episode card to enter its detail page before playing. Users rarely go back to the first episode anyway.
+            // Entering an episode from Continue Watching can request the first episode's file instead of the current one.
+            // Workarounds are playing from the episode card below or reopening the episode from that card.
+            // Side effect: pressing Play on the first-episode card at the bottom may play the current episode.
+            // Pressing it again, or opening the first episode before playing it, avoids that side effect.
             return pageId;
 
         } else if (window.location.href.match(/serverId=/)) {
-            return itemId; // Only handle the home page Continue Watching and episode detail pages; ignore other pages.
+            return itemId; // Only handle home-page Continue Watching and episode detail pages.
         }
         let correctSeaId = episodesInfoCache.find(item => item.Id == itemId)?.SeasonId;
         let correctItemId = resumeRawInfoCache.find(item => item.SeasonId == correctSeaId)?.Id;
@@ -521,7 +400,7 @@
         }
         for (const cache of cacheList) {
             if (funName == 'getPlaybackInfo') {
-                // The external subtitle index changes before and after strm ffprobe processing, so do not cache.
+                // External subtitle indexes can change after ffprobe processes strm media, so do not cache it.
                 let runtime = resInfo?.MediaSources?.[0]?.RunTimeTicks;
                 if (!runtime)
                     break;
@@ -549,7 +428,7 @@
         episodesInfoCache = episodesInfoCache[0] ? episodesInfoCache[1].clone() : null;
         let itemId = rawId;
         let [playbackData, mainEpInfo, episodesInfoData] = await Promise.all([
-            getPlaybackWithCace(itemId), // originFetch(raw_url, request), may throw NoCompatibleStream
+            getPlaybackWithCace(itemId), // originFetch(raw_url, request) can return NoCompatibleStream.
             getItemInfoWithCace(itemId),
             episodesInfoCache?.json(),
         ]);
@@ -574,7 +453,7 @@
             episodesInfo: episodesInfoData,
             playlistInfo: playlistData,
             serverName: detectServerName(),
-            gmInfo: GM_info,
+            gmInfo: injectorScriptInfo,
             userAgent: navigator.userAgent,
         }
         playlistInfoCache = null;
@@ -628,7 +507,7 @@
             episodesInfo: episodesInfo,
             playlistInfo: [],
             serverName: detectServerName(),
-            gmInfo: GM_info,
+            gmInfo: injectorScriptInfo,
             userAgent: navigator.userAgent,
         }
         let requestHeaders = {
@@ -652,7 +531,8 @@
         if (localStorage.getItem(etlpStorageKeys.webPlayerEnable) == 'true') { return; }
         // if (window.location.hash != '#!/home') { return; }
         const cardPlayBtn = e.target.closest('button.cardOverlayFab-primary[data-action="play"]');
-        // Latest TV and library TV will be "resume" and need an extra nextup request to get season/episode info. But multi-version only returns one version, so multi-version info must be requested again before playback.
+        // Latest/library TV cards may use "resume" and require an extra NextUp request for season/episode data.
+        // That response contains only one version, so playback must request multi-version data again.
         // const cardPlayBtn = e.target.closest('button.cardOverlayFab-primary[data-action="play"], button.cardOverlayFab-primary[data-action="resume"]');
         // const listPlayBtn = e.target.closest('button.listItem[data-id="resume"][data-action="custom"]');
         // const listShuffleBtn = e.target.closest('button.listItem[data-id="shuffle"][data-action="custom"]');
@@ -735,9 +615,9 @@
         }
     }
 
-    let itemInfoRe = /\/Items\/(\w+)\?/; // Must be strict, otherwise manually marking as played (PlayedItems) would also match and cache wrong data.
+    let itemInfoRe = /\/Items\/(\w+)\?/; // Keep this strict so PlayedItems requests do not pollute the cache.
 
-    unsafeWindow.fetch = async (input, options) => {
+    window.fetch = async (input, options) => {
         let isStrInput = typeof input === 'string';
         let urlStr = isStrInput ? input : input.url;
 
@@ -756,7 +636,7 @@
                 logger.info('cleanOptionalCache by metadataMayChange')
             }
         }
-        // Adapt to playlist and library Play All / Shuffle. This disables version filtering and title beautification.
+        // Support Play All and Shuffle for playlists/libraries. This disables version filtering and title formatting.
         if (urlStr.includes('Items?') && /Limit=(300|1000|5\d\d\d)/.test(urlStr)) {
             let _resp = await originFetch(input, options);
             if (serverName == 'emby') {
@@ -768,7 +648,7 @@
                     });
                     let viewsRegex = viewsIds.join('|');
                     viewsRegex = `ParentId=(${viewsRegex})`
-                    if (!RegExp(viewsRegex).test(urlStr)) { // Needed for title beautification when clicking season play, not library shuffle.
+                    if (!RegExp(viewsRegex).test(urlStr)) { // Needed for season-play title formatting, not library shuffle.
                         episodesInfoCache = ['Items', _resp.clone()]
                         logger.info('episodesInfoCache', episodesInfoCache);
                         logger.info('viewsRegex', viewsRegex);
@@ -791,7 +671,7 @@
             }
             return _resp
         }
-        // Get episode titles etc., only used for title beautification; placed later to avoid mistakenly intercepting home page right-click library shuffle data.
+        // Fetch episode titles for display. Keep this after playlist handling to avoid intercepting library shuffle data.
         let _epMatch = urlStr.match(episodesInfoRe);
         if (_epMatch) {
             _epMatch = _epMatch[0].split(['?'])[0].substring(1); // Episodes|NextUp|Items
@@ -813,7 +693,7 @@
             let _resp = await originFetch(fetchInput, options);
             let _resd = await _resp.clone().json();
 
-            // Handle hiding specific TV series
+            // Hide selected series.
             if (config.resumeHideSomeSeries && _resd.Items && _resd.Items.length > 0) {
                 const hideListStr = localStorage.getItem(etlpStorageKeys.hideSeriesIds);
                 if (hideListStr) {
@@ -826,10 +706,10 @@
                         });
                         const hiddenCount = originalLength - _resd.Items.length;
                         if (hiddenCount > 0) {
-                            logger.info(`Hidden ${hiddenCount} TV series items`);
+                            logger.info(`Hidden ${hiddenCount} series item(s)`);
                         }
                     } catch (e) {
-                        logger.error('Failed to parse hide list:', e);
+                        logger.error('Failed to parse the hidden-series list:', e);
                     }
                 }
             }
@@ -850,7 +730,7 @@
                     }
                 });
                 _resd.Items = [...firstTwo, ...recentItems, ...olderItems];
-                logger.info(`Reorder done: first 2 kept, ${recentItems.length} items from the last 3 days moved forward, ${olderItems.length} older items moved back`);
+                logger.info(`Resume reorder complete: kept the first 2, moved ${recentItems.length} recent item(s), left ${olderItems.length} older item(s)`);
             }
 
             const modifiedBody = JSON.stringify(_resd);
@@ -866,7 +746,7 @@
 
             return modifiedResponse;
         }
-        // Cache itemInfo; it may also match Items/Resume, so it is placed later.
+        // Cache itemInfo after resume handling because this expression can also match Items/Resume.
         if (urlStr.match(itemInfoRe)) {
             let itemId = urlStr.match(itemInfoRe)[1];
             let resp = await originFetch(input, options);
@@ -882,7 +762,7 @@
                 } else {
                     let itemId = urlStr.match(/\/Items\/(\w+)\/PlaybackInfo/)[1];
                     let resp = await originFetch(input, options);
-                    addFileNameElement(resp.clone()); // itemId data does not contain multi-version file info, so it is not used
+                    addFileNameElement(resp.clone()); // itemId data does not contain multi-version file details.
                     addOpenFolderElement(itemId);
                     logger.info(`CACHE allPlaybackCache itemId=${itemId}`);
                     cloneAndCacheFetch(resp.clone(), itemId, allPlaybackCache);
@@ -937,7 +817,7 @@
                     .then((res) => {
                         let extraData = {
                             serverName: serverName,
-                            gmInfo: GM_info,
+                            gmInfo: injectorScriptInfo,
                             userAgent: navigator.userAgent,
                         };
                         let data = {
@@ -980,24 +860,9 @@
 
     initXMLHttpRequest();
 
-    setModeSwitchMenu(etlpStorageKeys.webPlayerEnable, 'Script on this server is ', '', 'Available', 'Disabled', 'Available');
-    setModeSwitchMenu(etlpStorageKeys.mountDiskEnable, 'Read disk mode is ');
-
-    function showGuiMenu() {
-        sendDataToLocalServer({ 'showTaskManager': true }, 'embyToLocalPlayer');
-    }
-    if ('etlpTaskManager' in localStorage) {
-        setCallbackMenu('View cache tasks', showGuiMenu);
-    }
-
     overwriteConfByStore();
 
-    if (config.resumeHideSomeSeries || localStorage.getItem(etlpStorageKeys.resumeHide) === 'true') {
-        setCallbackMenu('Continue Watching: Hide this TV series', hideCurrentSeries);
-        setCallbackMenu('Continue Watching: Reset hide settings', resetHiddenSeries);
-    }
-
-    // let debounceTimer; # Some CSS selectors are broad, so checking after playback is safer.
+    // let debounceTimer; # Some CSS selectors are broad; checking after playback is more reliable.
     // const observer = new MutationObserver(() => {
     //     clearTimeout(debounceTimer);
     //     debounceTimer = setTimeout(removeErrorWindows, 100);

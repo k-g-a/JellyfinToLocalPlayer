@@ -68,8 +68,10 @@ def parse_received_data_emby(received_data):
     api_client = received_data['ApiClient']
     url = urllib.parse.urlparse(received_data['playbackUrl'])
     headers = received_data['request'].get('headers', {})
-    is_emby = True if '/emby/' in url.path else False
-    jellyfin_auth = headers.get('X-Emby-Authorization', headers.get('Authorization')) if not is_emby else ''
+    reported_server = extra_data.get('serverName')
+    is_emby = reported_server == 'emby' if reported_server in ('emby', 'jellyfin') else '/emby/' in url.path
+    jellyfin_auth = (headers.get('X-Emby-Authorization', headers.get('Authorization')) or '') \
+        if not is_emby else ''
     jellyfin_auth = [i.replace('\'', '').replace('"', '').strip().split('=')
                      for i in jellyfin_auth.split(',')] if not is_emby else []
     jellyfin_auth = dict((i[0], i[1]) for i in jellyfin_auth if len(i) == 2)
@@ -79,9 +81,11 @@ def parse_received_data_emby(received_data):
     item_id = [str(i) for i in url.path.split('/')]
     item_id = item_id[item_id.index('Items') + 1]
     media_source_id = query.get('MediaSourceId')
-    api_key = query['X-Emby-Token'] if is_emby else jellyfin_auth['Token']
+    header_api_key = headers.get('X-Emby-Token', headers.get('x-emby-token'))
+    api_key = query.get('X-Emby-Token') or jellyfin_auth.get('Token') or header_api_key
     scheme, netloc = api_client['_serverAddress'].split('://')
-    device_id = query['X-Emby-Device-Id'] if is_emby else jellyfin_auth['DeviceId']
+    header_device_id = headers.get('X-Emby-Device-Id', headers.get('x-emby-device-id'))
+    device_id = query.get('X-Emby-Device-Id') or jellyfin_auth.get('DeviceId') or header_device_id
     sub_index = int(query.get('SubtitleStreamIndex', -1))
     logger_setup(api_key=api_key, netloc=netloc)
 

@@ -488,8 +488,11 @@ def _prefetch_resume_tv(emby_thin: EmbyApiThin, startswith, fetch_type=''):
                 playback_info = emby_thin.get_playback_info(item_id)
                 play_session_id = playback_info['PlaySessionId']
                 host = emby_thin.host
-                image = f'[ ]({host}/emby/Items/{item_id}/Images/Primary?maxHeight=282&maxWidth=500)'
-                item_url = f"[emby]({host}/web/index.html#!/item?id={item_id}&serverId={ep['ServerId']})"
+                image_url = emby_thin.api_url(
+                    f'Items/{item_id}/Images/Primary?maxHeight=282&maxWidth=500')
+                image = f'[ ]({image_url})'
+                item_url = (f"[{emby_thin.server}]({host}/web/index.html#!/item?id={item_id}"
+                            f"&serverId={ep['ServerId']})")
                 notify_msg = f"{image}{ep['SeriesName']} \| `{time.ctime()}` \| {item_url}"
 
                 media_sources = playback_info['MediaSources']
@@ -512,9 +515,11 @@ def _prefetch_resume_tv(emby_thin: EmbyApiThin, startswith, fetch_type=''):
                         item_done_stat[item_id].append(source_id)
                     # stream_url = f'{host}/videos/{ep["Id"]}/stream{container}' \
                     #              f'?MediaSourceId={source_info["Id"]}&Static=true&api_key={api_key}'
-                    stream_url = f'{host}/emby/videos/{item_id}/stream{container}' \
-                                 f'?DeviceId=embyToLocalPlayer&MediaSourceId={source_id}&Static=true' \
-                                 f'&PlaySessionId={play_session_id}&api_key={emby_thin.api_key}'
+                    stream_url = (
+                        emby_thin.api_url(f'videos/{item_id}/stream{container}')
+                        + f'?DeviceId=embyToLocalPlayer&MediaSourceId={source_id}&Static=true'
+                        + f'&PlaySessionId={play_session_id}&api_key={emby_thin.api_key}'
+                    )
                     strm_direct = configs.check_str_match(host, 'dev', 'strm_direct_host', log=False)
                     is_http_direct_strm = is_strm and strm_direct and is_http_source
                     if is_http_direct_strm:
