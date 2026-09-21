@@ -43,6 +43,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 120));
     for (const button of buttons()) { button.click(); await tick(); }
     assert.deepEqual(posts.map(p => new URL(p.url).port), ['58000', '58001']);
     assert(posts.every(p => !('playerProfile' in p.data)));
+    assert(posts.every(p => p.data.mountDiskEnable === 'false'));
     assert(posts.every(p => p.data.playbackUrl.includes('AudioStreamIndex=2')));
     statuses[0] = null;
     await tick();

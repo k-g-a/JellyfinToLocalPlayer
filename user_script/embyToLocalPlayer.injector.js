@@ -11,6 +11,8 @@
     // Edit only these local settings when using different instance ports.
     // Missing settings retain the defaults below; an empty endpoints array disables discovery.
     const SETTINGS = {};
+    // false streams through Jellyfin; true translates Jellyfin paths through [src]/[dst].
+    const MOUNT_DISK_ENABLE = false;
     const endpoints = [...new Set(SETTINGS.endpoints ?? [
         'http://127.0.0.1:58000',
         'http://127.0.0.1:58001',
@@ -378,7 +380,7 @@
                     'X-Emby-Token': accessToken,
                 },
             },
-            mountDiskEnable: 'true',
+            mountDiskEnable: String(MOUNT_DISK_ENABLE),
             extraData: {
                 mainEpInfo: item,
                 episodesInfo,
