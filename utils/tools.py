@@ -34,7 +34,7 @@ def safe_deleter(file, ext: Union[str, list, tuple] = ('mkv', 'mp4', 'srt', 'ass
 
 
 def clean_tmp_dir():
-    tmp = os.path.join(configs.cwd, '.tmp')
+    tmp = configs.tmp_dir
     if os.path.isdir(tmp):
         for file in os.listdir(tmp):
             os.remove(os.path.join(tmp, file))
@@ -298,42 +298,17 @@ def select_player_by_path(file_path, data=None):
     return False
 
 
-def get_player_profile_map():
-    """Return the explicitly configured injector profile-to-player mappings."""
-    profiles = {}
-    for option, value in configs.raw.items('emby'):
-        player = value.strip()
-        if not option.startswith('player_') or not player:
-            continue
-        if not configs.raw.has_option('exe', player) or not configs.raw.get('exe', player).strip():
-            continue
-        profiles[option[len('player_'):]] = player
-    return profiles
-
-
 def get_player_cmd(media_path, file_path, data=None):
     # emby source_path is the content of the strm
     config = configs.raw
-    player_profile = (data or {}).get('player_profile')
-    if player_profile:
-        profile_map = get_player_profile_map()
-        try:
-            player = profile_map[player_profile]
-        except KeyError:
-            raise ValueError(
-                f'player profile {player_profile!r} is not configured in the [emby] section'
-            ) from None
-        _logger.info(f'select {player}, cuz player profile {player_profile}')
-    else:
-        player = config['emby']['player']
+    player = config['emby']['player']
     try:
         exe = config['exe'][player]
     except KeyError:
         raise ValueError(f'{player=}, {player} not found, check config ini file') from None
-    if not player_profile:
-        exe = config['dandan']['exe'] if use_dandan_exe_by_path(file_path, data=data) else exe
-        if player_by_path := select_player_by_path(file_path, data=data):
-            exe = config['exe'][player_by_path]
+    exe = config['dandan']['exe'] if use_dandan_exe_by_path(file_path, data=data) else exe
+    if player_by_path := select_player_by_path(file_path, data=data):
+        exe = config['exe'][player_by_path]
     result = [exe, media_path]
     _logger.info('command line:', result)
     if not media_path.startswith('http') and not os.path.exists(media_path):

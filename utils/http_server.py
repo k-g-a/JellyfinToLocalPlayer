@@ -18,7 +18,7 @@ from utils.players import start_player_func_dict, stop_sec_func_dict
 from utils.simkl_sync import simkl_api_client
 from utils.tools import (configs, MyLogger, open_local_folder, play_media_file,
                          activate_window_by_pid, get_player_cmd, ThreadWithReturnValue,
-                         create_sparse_file, get_player_profile_map)
+                         create_sparse_file)
 from utils.trakt_sync import trakt_api_client
 
 player_is_running = False
@@ -42,9 +42,11 @@ class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
 
-def run_server(ip='127.0.0.1', port=58000):
+def run_server(ip='127.0.0.1', port=None):
+    port = configs.server_port if port is None else port
     if not configs.raw.getboolean('dev', 'listen_on_localhost', fallback=True):
         ip = get_machine_ip()
+    configs.local_server_url = f'http://{ip}:{port}'
     server_address = (ip, port)
     httpd = ThreadingHTTPServer(server_address, UserScriptRequestHandler)
     logger.info('serving at http://%s:%d' % server_address)
@@ -72,13 +74,6 @@ class UserScriptRequestHandler(BaseHTTPRequestHandler):
         data = json.loads(self.rfile.read(length))
         configs.update()
         if 'ToLocalPlayer' in self.path:
-            player_profile = data.get('playerProfile')
-            if player_profile and player_profile not in get_player_profile_map():
-                self._post_resopne(
-                    {'error': f'Player profile {player_profile!r} is not configured.'},
-                    status=400,
-                )
-                return
             self._post_resopne()
             if data.get('showTaskManager'):
                 from utils.gui import show_task_manager
@@ -159,7 +154,9 @@ class UserScriptRequestHandler(BaseHTTPRequestHandler):
             self.return_json({
                 'service': 'JellyfinToLocalPlayer',
                 'ready': True,
-                'playerProfiles': sorted(get_player_profile_map()),
+                'player': configs.raw.get('emby', 'player'),
+                'title': configs.raw.get('server', 'title', fallback='').strip()
+                         or configs.raw.get('emby', 'player'),
             })
             return
         if self.path in ['/', '/favicon.ico']:

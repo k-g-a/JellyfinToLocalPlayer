@@ -24,6 +24,15 @@ mpv_play_speed = {'media_title': 'speed'}
 # stop_sec_* accepts dict parameters
 
 def get_pipe_or_port_str(get_pipe=False):
+    if configs.explicit_config:
+        if get_pipe:
+            import uuid
+            return 'etlp_' + uuid.uuid4().hex
+        import socket
+        # Let the OS select a currently unused control port for this player.
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            return str(sock.getsockname()[1])
     pipe_port = 'pipe_name' if get_pipe else 58423
     num = pipe_port_stack.pop()
     pipe_port_stack.insert(0, num)
@@ -157,7 +166,7 @@ START={end}
 END=9999
 title=Main
 '''
-    _tmp = os.path.join(configs.cwd, '.tmp')
+    _tmp = configs.tmp_dir
     chap_path = os.path.join(_tmp, f'{file_name}-chapters.txt')
     if not os.path.exists(_tmp):
         os.mkdir(_tmp)

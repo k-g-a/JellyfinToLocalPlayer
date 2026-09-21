@@ -402,7 +402,7 @@ class PrefetchManager(BaseInit):  # Multiple player instances are not supported 
                 ep = list_playlist_data[next_ep_index]
                 if prefetch_type == 'sequence':
                     ep['gui_cmd'] = 'download_only'
-                    requests_urllib('http://127.0.0.1:58000/pl', _json=ep)
+                    requests_urllib(f'{configs.local_server_url}/pl', _json=ep)
                 elif prefetch_type == 'first_last':
                     # if ep['total_sec'] == 86400:
                     #     # strm media info missing -> present: the external subtitle link becomes invalid.
@@ -410,7 +410,7 @@ class PrefetchManager(BaseInit):  # Multiple player instances are not supported 
                     #     self.emby_thin.get_playback_info(ep['item_id'], timeout=60)
                     ep['gui_cmd'] = 'download_not_play'
                     # ep['stream_url'] = get_redirect_url(ep['stream_url'], follow_redirect=True)
-                    requests_urllib('http://127.0.0.1:58000/pl', _json=ep)
+                    requests_urllib(f'{configs.local_server_url}/pl', _json=ep)
                 else:
                     null_file = 'NUL' if os.name == 'nt' else '/dev/null'
                     dl = Downloader(ep['stream_url'], ep['basename'], save_path=null_file, size=ep.get('size'))

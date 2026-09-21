@@ -57,16 +57,52 @@ general-purpose userscript extension access to browser pages.
 2. Create an injector entry and paste the complete contents of
    [`user_script/embyToLocalPlayer.injector.js`](user_script/embyToLocalPlayer.injector.js) into it.
 3. Enable the entry and refresh Jellyfin Web.
-4. Configure the two local players in `embyToLocalPlayer_config.ini`:
-   * `player_madvr` selects the executable used by the **madVR** button.
-   * `player_dolby_vision` selects the executable used by the **Dolby Vision** button.
-5. Start the local Python service. The two buttons appear beside Jellyfin's own Play button while the service is
-   reachable; they disappear when it is not running.
+4. Copy the complete `embyToLocalPlayer_config.ini` into two files, for example `madvr.ini` and
+   `dolby-vision.ini`. In each copy, select the usual `[emby] player` and configure its `[exe]` path.
+   Set these optional entries (add the `[server]` section if missing):
 
-The injector build is self-contained and does not load JavaScript from a third-party URL. It does not replace
-`window.fetch`, `XMLHttpRequest`, Jellyfin's Play action, or browser prototypes. It uses Jellyfin's `ApiClient` only
-when an ETLP button is pressed, then sends the resulting playback data directly to `http://127.0.0.1:58000`.
-Disk-read mode is enabled for these two actions; configure `[src]` and `[dst]` for the server-to-local path mapping.
+   | Setting | `madvr.ini` | `dolby-vision.ini` | If omitted |
+   | --- | --- | --- | --- |
+   | `[emby] player` | `hc` | `be` | Keep your existing player selection |
+   | `[server] port` | `58000` | `58001` | `58000` |
+   | `[server] title` | `MPC-HC / madVR` | `MPC-BE / Dolby Vision` | Value of `[emby] player` |
+
+5. Start each instance in a separate terminal using your existing Python environment:
+
+   ```sh
+   python embyToLocalPlayer.py --config madvr.ini
+   python embyToLocalPlayer.py --config dolby-vision.ini
+   ```
+
+The injector probes both local ports independently and shows **Play in MPC-HC / madVR** and
+**Play in MPC-BE / Dolby Vision** beside Jellyfin's own Play button when the corresponding service responds.
+An absent service produces no button, including on clients without ETLP. Each click goes directly to that
+instance; there is no player-profile parameter. Player selection and existing path-based overrides remain
+controlled by each instance's normal configuration.
+
+To change discovery ports, edit the injector's local `SETTINGS` object, for example:
+
+```js
+const SETTINGS = { endpoints: ['http://127.0.0.1:59000', 'http://127.0.0.1:59001'] };
+```
+
+Omitted settings use ports `58000` and `58001`, a 5-second request timeout, and probe intervals of 5 seconds
+for available services and 10 seconds for unavailable services. Optional keys are `requestTimeoutMs`,
+`probeIntervalAvailableMs`, and `probeIntervalUnavailableMs`. An empty `endpoints` array disables discovery.
+The browser must permit requests from Jellyfin Web to loopback; an unreachable or blocked endpoint stays hidden.
+
+Without `--config`, existing config discovery and port `58000` remain unchanged. A blank or missing
+`[server] title` uses the configured player name. Restart an instance after changing its port.
+Explicit config files get separate temporary files, relative logs, OAuth token files and download-cache
+subdirectories under a config-path identity; runtime files live under `.instances/`.
+Absolute log paths should be different for each instance. Explicit-config startup skips broad process killing
+and automatic embedded-mpv selection so it does not stop or reconfigure another instance. Use `--config` for
+**both** processes. Player control ports are selected from available ports and mpv pipes get unique names;
+leave `[dev] mpv_input_ipc_server` unset when running multiple mpv instances. If using Trakt or Simkl, register the corresponding instance port in its OAuth redirect URI.
+
+The injector is self-contained and does not replace `window.fetch`, `XMLHttpRequest`, Jellyfin's Play action,
+or browser prototypes. It uses Jellyfin's `ApiClient` only when an ETLP button is pressed.
+Disk-read mode is enabled for these actions; configure `[src]` and `[dst]` separately in each INI for path mapping.
 
 > Before you begin
 

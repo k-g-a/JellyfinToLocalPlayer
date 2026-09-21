@@ -8,23 +8,16 @@
 
     const STYLE_ID = 'etlp-injector-style';
     const BUTTON_CLASS = 'etlp-player-button';
-    const BACKEND_URL = 'http://127.0.0.1:58000';
-    const PROBE_INTERVAL_AVAILABLE_MS = 5000;
-    const PROBE_INTERVAL_UNAVAILABLE_MS = 10000;
-    const REQUEST_TIMEOUT_MS = 5000;
-
-    const PLAYER_PROFILES = [
-        {
-            id: 'madvr',
-            label: 'madVR',
-            title: 'Play with MPC-HC / madVR',
-        },
-        {
-            id: 'dolby_vision',
-            label: 'Dolby Vision',
-            title: 'Play with MPC-BE / MPC Video Renderer',
-        },
-    ];
+    // Edit only these local settings when using different instance ports.
+    // Missing settings retain the defaults below; an empty endpoints array disables discovery.
+    const SETTINGS = {};
+    const endpoints = [...new Set(SETTINGS.endpoints ?? [
+        'http://127.0.0.1:58000',
+        'http://127.0.0.1:58001',
+    ])].map(url => ({ url: url.replace(/\/$/, ''), available: false, title: '' }));
+    const PROBE_INTERVAL_AVAILABLE_MS = SETTINGS.probeIntervalAvailableMs ?? 5000;
+    const PROBE_INTERVAL_UNAVAILABLE_MS = SETTINGS.probeIntervalUnavailableMs ?? 10000;
+    const REQUEST_TIMEOUT_MS = SETTINGS.requestTimeoutMs ?? 5000;
 
     if (document.getElementById(STYLE_ID)) {
         return;
@@ -32,8 +25,7 @@
 
     const nativeFetch = window.fetch.bind(window);
     const state = {
-        backendAvailable: false,
-        availableProfiles: new Set(),
+        busy: false,
         syncTimer: null,
     };
 
@@ -196,6 +188,7 @@
     }
 
     function setButtonsBusy(isBusy) {
+        state.busy = isBusy;
         document.querySelectorAll(`.${BUTTON_CLASS}`).forEach(button => {
             button.disabled = isBusy;
             button.setAttribute('aria-busy', String(isBusy));
@@ -206,14 +199,16 @@
         document.querySelectorAll(`.${BUTTON_CLASS}`).forEach(button => button.remove());
     }
 
-    function createPlayerButton(profile, itemId) {
+    function createPlayerButton(endpoint, itemId) {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = `button-flat ${BUTTON_CLASS}`;
-        button.dataset.etlpProfile = profile.id;
+        button.dataset.etlpEndpoint = endpoint.url;
+        button.disabled = state.busy;
+        button.setAttribute('aria-busy', String(state.busy));
         button.dataset.etlpItemId = itemId;
-        button.title = profile.title;
-        button.setAttribute('aria-label', profile.title);
+        button.title = `Play in ${endpoint.title}`;
+        button.setAttribute('aria-label', `Play in ${endpoint.title}`);
 
         const icon = document.createElement('span');
         icon.className = 'material-icons etlp-player-button-icon play_arrow';
@@ -221,13 +216,13 @@
 
         const label = document.createElement('span');
         label.className = 'etlp-player-button-label';
-        label.textContent = profile.label;
+        label.textContent = `Play in ${endpoint.title}`;
 
         button.append(icon, label);
         button.addEventListener('click', event => {
             event.preventDefault();
             event.stopPropagation();
-            launchPlayer(profile, button).catch(error => {
+            launchPlayer(endpoint, button).catch(error => {
                 console.error('[ETLP] Unable to start local playback:', error);
                 showToast(error.message || 'Unable to start local playback.', true);
             });
@@ -236,7 +231,7 @@
     }
 
     function syncButtons() {
-        if (!state.backendAvailable) {
+        if (!endpoints.some(endpoint => endpoint.available)) {
             removeButtons();
             return;
         }
@@ -249,10 +244,12 @@
         }
 
         const existingButtons = Array.from(document.querySelectorAll(`.${BUTTON_CLASS}`));
-        const expectedProfiles = PLAYER_PROFILES.filter(profile => state.availableProfiles.has(profile.id));
-        const isCurrent = existingButtons.length === expectedProfiles.length
+        const expectedEndpoints = endpoints.filter(endpoint => endpoint.available);
+        const isCurrent = existingButtons.length === expectedEndpoints.length
             && existingButtons.every(button => button.dataset.etlpItemId === itemId)
-            && expectedProfiles.every(profile => existingButtons.some(button => button.dataset.etlpProfile === profile.id));
+            && existingButtons.every(button => button.parentElement === nativePlayButton.parentElement)
+            && expectedEndpoints.every(endpoint => existingButtons.some(button =>
+                button.dataset.etlpEndpoint === endpoint.url && button.title === `Play in ${endpoint.title}`));
 
         if (isCurrent) {
             return;
@@ -260,7 +257,7 @@
 
         removeButtons();
         const fragment = document.createDocumentFragment();
-        expectedProfiles.forEach(profile => fragment.appendChild(createPlayerButton(profile, itemId)));
+        expectedEndpoints.forEach(endpoint => fragment.appendChild(createPlayerButton(endpoint, itemId)));
         nativePlayButton.after(fragment);
     }
 
@@ -269,10 +266,10 @@
         state.syncTimer = window.setTimeout(syncButtons, 80);
     }
 
-    async function probeBackend() {
+    async function probeBackend(endpoint) {
         const timeout = withTimeout(REQUEST_TIMEOUT_MS);
         try {
-            const response = await nativeFetch(`${BACKEND_URL}/etlp/status`, {
+            const response = await nativeFetch(`${endpoint.url}/etlp/status`, {
                 cache: 'no-store',
                 headers: { Accept: 'application/json' },
                 signal: timeout.signal,
@@ -282,17 +279,16 @@
             }
 
             const status = await response.json();
-            state.backendAvailable = status.ready === true;
-            state.availableProfiles = new Set(status.playerProfiles || []);
+            endpoint.available = status.service === 'JellyfinToLocalPlayer' && status.ready === true;
+            endpoint.title = String(status.title || status.player || 'local player');
         } catch (_error) {
-            state.backendAvailable = false;
-            state.availableProfiles = new Set();
+            endpoint.available = false;
         } finally {
             timeout.cancel();
             syncButtons();
             window.setTimeout(
-                probeBackend,
-                state.backendAvailable ? PROBE_INTERVAL_AVAILABLE_MS : PROBE_INTERVAL_UNAVAILABLE_MS,
+                () => probeBackend(endpoint),
+                endpoint.available ? PROBE_INTERVAL_AVAILABLE_MS : PROBE_INTERVAL_UNAVAILABLE_MS,
             );
         }
     }
@@ -326,7 +322,7 @@
         }
     }
 
-    function createPlaybackRequest(apiClient, item, playbackData, episodesInfo, trackSelection, playerProfile) {
+    function createPlaybackRequest(apiClient, item, playbackData, episodesInfo, trackSelection) {
         const serverAddress = callApiClient(apiClient, 'serverAddress', '_serverAddress') || window.location.origin;
         const userId = callApiClient(apiClient, 'getCurrentUserId', '_currentUserId')
             || apiClient._serverInfo?.UserId;
@@ -383,21 +379,21 @@
                 },
             },
             mountDiskEnable: 'true',
-            playerProfile,
             extraData: {
                 mainEpInfo: item,
                 episodesInfo,
                 playlistInfo: [],
                 serverName: 'jellyfin',
-                injectorVersion: '2.0.0',
+                injectorVersion: '3.0.0',
                 userAgent: navigator.userAgent,
             },
         };
     }
 
-    async function launchPlayer(profile, button) {
-        if (!state.backendAvailable || !state.availableProfiles.has(profile.id)) {
-            throw new Error('The local ETLP service is not available for this player profile.');
+    async function launchPlayer(endpoint, button) {
+        if (state.busy) return;
+        if (!endpoint.available) {
+            throw new Error('This local ETLP instance is not available.');
         }
 
         const apiClient = getApiClient();
@@ -441,11 +437,10 @@
                 playbackData,
                 episodesInfo,
                 trackSelection,
-                profile.id,
             );
             const timeout = withTimeout(REQUEST_TIMEOUT_MS);
             try {
-                const response = await nativeFetch(`${BACKEND_URL}/embyToLocalPlayer/`, {
+                const response = await nativeFetch(`${endpoint.url}/embyToLocalPlayer/`, {
                     method: 'POST',
                     body: JSON.stringify(payload),
                     signal: timeout.signal,
@@ -458,7 +453,7 @@
                 timeout.cancel();
             }
 
-            showToast(`Opening “${item.Name || 'video'}” with ${profile.label}.`);
+            showToast(`Opening “${item.Name || 'video'}” with ${endpoint.title}.`);
         } finally {
             setButtonsBusy(false);
             button.blur();
@@ -476,5 +471,5 @@
     });
     window.addEventListener('hashchange', scheduleButtonSync);
     window.addEventListener('popstate', scheduleButtonSync);
-    probeBackend();
+    endpoints.forEach(probeBackend);
 })();

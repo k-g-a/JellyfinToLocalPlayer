@@ -12,3 +12,6 @@ trakt_token.json
 
 __pycache__
 .idea
+
+# Per-config runtime state
+.instances/

@@ -266,7 +266,6 @@ def parse_received_data_emby(received_data):
         is_http_direct_strm=is_http_direct_strm,
         sub_inner_idx=sub_inner_idx,
         size=size,
-        player_profile=received_data.get('playerProfile'),
     )
     return result
 
