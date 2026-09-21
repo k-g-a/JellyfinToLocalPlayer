@@ -129,7 +129,7 @@ class FollowHTTPRedirectHandler(urllib.request.HTTPRedirectHandler):
 
 def check_miss_runtime_start_sec(netloc, item_id, basename, start_sec=0, stop_sec=None):
     href = configs.raw.get('dev', 'server_side_href', fallback='').strip().strip('/')
-    href = href or 'http://127.0.0.1:58000'
+    href = href or configs.local_server_url
     url = f'{href}/miss_runtime_start_sec'
     params = {'netloc': netloc, 'item_id': item_id, 'basename': basename}
     get_json = True
@@ -405,6 +405,6 @@ def sync_third_party_for_eps(eps, provider):
         simkl_sync_main(eps_data=useful_items)
 
 def save_sub_file(url, name='tmp_sub.srt'):
-    srt = os.path.join(configs.cwd, '.tmp', name)
+    srt = os.path.join(configs.tmp_dir, name)
     requests_urllib(url, save_path=srt)
     return srt

@@ -12,14 +12,34 @@ from configparser import ConfigParser
 import getpass
 
 
-def mini_conf():
+def config_path():
+    explicit = os.environ.get('ETLP_CONFIG')
+    if explicit:
+        path = os.path.abspath(explicit)
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f'ETLP config does not exist: {path}')
+        return path
     cwd = os.path.dirname(os.path.dirname(__file__))
-    _platform = 'Android' if hasattr(sys, 'getandroidapilevel') else platform.system()
-    path = [os.path.join(cwd, 'embyToLocalPlayer' + ext) for ext in (
-        f'-{_platform}.ini', '.ini', '_config.ini') if ext]
-    path = [i for i in path if os.path.exists(i)][0]
+    system = 'Android' if hasattr(sys, 'getandroidapilevel') else platform.system()
+    return next(os.path.join(cwd, 'embyToLocalPlayer' + ext)
+                for ext in (f'-{system}.ini', '.ini', '_config.ini')
+                if os.path.isfile(os.path.join(cwd, 'embyToLocalPlayer' + ext)))
+
+
+def runtime_dir():
+    cwd = os.path.dirname(os.path.dirname(__file__))
+    if not os.environ.get('ETLP_CONFIG'):
+        return cwd
+    import hashlib
+    identity = os.path.normcase(os.path.realpath(config_path())).encode('utf-8')
+    path = os.path.join(cwd, '.instances', hashlib.sha256(identity).hexdigest()[:16])
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def mini_conf():
     config = ConfigParser()
-    config.read(path, encoding='utf-8-sig')
+    config.read(config_path(), encoding='utf-8-sig')
     return config
 
 
@@ -32,8 +52,10 @@ class Stdout:
     def __init__(self):
         self.log_file = mini_conf().get('dev', 'log_file', fallback='')
         if self.log_file:
-            if self.log_file.startswith('./'):
-                cwd = os.path.dirname(os.path.dirname(__file__))
+            if os.environ.get('ETLP_CONFIG') and not os.path.isabs(self.log_file):
+                self.log_file = os.path.join(runtime_dir(), self.log_file)
+            elif self.log_file.startswith('./'):
+                cwd = runtime_dir()
                 self.log_file = os.path.join(cwd, self.log_file.split('./', 1)[1])
             mode = 'a' if os.path.exists(self.log_file) and os.path.getsize(self.log_file) < 10 * 1024000 else 'w'
             if not os.path.exists(self.log_file):
@@ -142,10 +164,15 @@ class Configs:
     def __init__(self):
         self.platform = 'Android' if hasattr(sys, 'getandroidapilevel') else platform.system()
         self.cwd = os.path.dirname(os.path.dirname(__file__))
-        self.path = [os.path.join(self.cwd, 'embyToLocalPlayer' + ext) for ext in (
-            f'-{self.platform}.ini', '.ini', '_config.ini') if ext]
-        self.path = [i for i in self.path if os.path.exists(i)][0]
+        self.path = config_path()
+        self.explicit_config = bool(os.environ.get('ETLP_CONFIG'))
+        self.runtime_dir = runtime_dir()
+        self.tmp_dir = os.path.join(self.runtime_dir, '.tmp')
         self.raw: ConfigParser = self.update()
+        self.server_port = self.raw.getint('server', 'port', fallback=58000)
+        if not 1 <= self.server_port <= 65535:
+            raise ValueError('[server] port must be between 1 and 65535')
+        self.local_server_url = f'http://127.0.0.1:{self.server_port}'
         self.fullscreen = self.raw.getboolean('emby', 'fullscreen', fallback=True)
         self.speed_limit = self.raw.getfloat('gui', 'speed_limit', fallback=0)
         self.log_level = self.raw.get('dev', 'log_level', fallback='INFO')
@@ -153,6 +180,8 @@ class Configs:
         self.disable_audio = self.raw.getboolean('dev', 'disable_audio', fallback=False)  # test in vm
         self.gui_is_enable = self.raw.getboolean('gui', 'enable', fallback=False)
         self.cache_path = self.raw.get('gui', 'cache_path', fallback=None)
+        if self.explicit_config and self.cache_path:
+            self.cache_path = os.path.join(self.cache_path, os.path.basename(self.runtime_dir))
         self.cache_db = self._get_cache_db()
         self.sys_proxy = self._get_sys_proxy()
         self.dl_proxy = self._get_proxy('download')
@@ -170,7 +199,7 @@ class Configs:
 
     def _get_cache_db(self):
         _cache_db = os.path.join(self.cache_path, '.embyToLocalPlayer.json') if self.cache_path else None
-        _dev_cache_db = os.path.join(self.cwd, 'z_cache.json')
+        _dev_cache_db = os.path.join(self.runtime_dir, 'z_cache.json')
         return _dev_cache_db if os.path.exists(_dev_cache_db) else _cache_db
 
     def _get_sys_proxy(self):
@@ -327,18 +356,20 @@ class Configs:
     def get_server_api_by_ini(self, specify='', use_thin_api=True, get_dict=True, specify_host=''):
         server_list = self.ini_str_split('dev', 'server_data_group', split_by=';', re_split_by=',')
         api_dict = {}
-        for server in server_list:
-            server_name, host, api_key, user_id = server
+        for server_config in server_list:
+            server_name, host, api_key, user_id, *server_type_config = server_config
+            server_type = server_type_config[0].lower() if server_type_config else 'emby'
             if specify and specify != server_name:
                 continue
             if specify_host and specify_host not in host:
                 continue
             if use_thin_api:
                 from utils.emby_api_thin import EmbyApiThin
-                api = EmbyApiThin(data=None, host=host, api_key=api_key, user_id=user_id)
+                api = EmbyApiThin(data=None, host=host, api_key=api_key, user_id=user_id, server=server_type)
             else:
                 from utils.emby_api import EmbyApi
                 api = EmbyApi(host=host, api_key=api_key, user_id=user_id,
+                              server=server_type,
                               http_proxy=self.script_proxy,
                               cert_verify=(
                                   not self.raw.getboolean('dev', 'skip_certificate_verify', fallback=False)), )
@@ -349,6 +380,8 @@ class Configs:
             return api_dict
 
     def set_player_path_by_mpv_embed_(self):
+        if self.explicit_config:
+            return
         ini_mpv = configs.raw.get('exe', 'mpv_embed', fallback='')
         embed_mpv = os.path.join(self.cwd, 'mpv_embed', 'mpv.exe')
         if not os.path.exists(embed_mpv) or ini_mpv == embed_mpv:

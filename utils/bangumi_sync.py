@@ -248,6 +248,7 @@ def emby_api_via_fist_ep(fist_ep):
     emby = EmbyApi(host=f"{fist_ep['scheme']}://{fist_ep['netloc']}",
                    api_key=fist_ep['api_key'],
                    user_id=fist_ep['user_id'],
+                   server=fist_ep.get('server', 'emby'),
                    http_proxy=configs.script_proxy,
                    cert_verify=(not configs.raw.getboolean('dev', 'skip_certificate_verify', fallback=False))
                    )
@@ -305,6 +306,7 @@ def api_client_via_stream_url(url):
     emby = EmbyApi(host=f"{parsed_url.scheme}://{netloc}{jelly_sp}",
                    api_key=api_key,
                    user_id=None,
+                   server='emby' if '/emby/' in parsed_url.path else 'jellyfin',
                    http_proxy=configs.script_proxy,
                    cert_verify=(not configs.raw.getboolean('dev', 'skip_certificate_verify', fallback=False)), )
     return emby, item_id, parsed_url

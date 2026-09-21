@@ -47,6 +47,90 @@ etlp - Use Emby/Jellyfin to launch PotPlayer mpv IINA MPC VLC for playback, and 
       Install Python (check add to path) [Official site](https://www.python.org/downloads/)
       Edit the config file: set the player path and player selection in `embyToLocalPlayer_config.ini`.
 
+> Jellyfin JavaScript Injector setup
+
+Jellyfin users can install the script through the server-side
+[JavaScript Injector plugin](https://github.com/n00bcodr/Jellyfin-JavaScript-Injector) instead of granting a
+general-purpose userscript extension access to browser pages.
+
+1. Install JavaScript Injector on the Jellyfin server.
+2. Create an injector entry and paste the complete contents of
+   [`user_script/embyToLocalPlayer.injector.js`](user_script/embyToLocalPlayer.injector.js) into it.
+3. Enable the entry and refresh Jellyfin Web.
+4. Copy the complete `embyToLocalPlayer_config.ini` into two files, for example `madvr.ini` and
+   `dolby-vision.ini`. In each copy, select the usual `[emby] player` and configure its `[exe]` path.
+   Set these optional entries (add the `[server]` section if missing):
+
+   | Setting | `madvr.ini` | `dolby-vision.ini` | If omitted |
+   | --- | --- | --- | --- |
+   | `[emby] player` | `hc` | `be` | Keep your existing player selection |
+   | `[server] port` | `58000` | `58001` | `58000` |
+   | `[server] title` | `MPC-HC / madVR` | `MPC-BE / Dolby Vision` | Value of `[emby] player` |
+
+5. Start each instance in a separate terminal using your existing Python environment:
+
+   ```sh
+   python embyToLocalPlayer.py --config madvr.ini
+   python embyToLocalPlayer.py --config dolby-vision.ini
+   ```
+
+   With the Windows portable package, you can instead use its menu for either console debugging or hidden
+   startup. Pass one config to each invocation; both forms below are accepted:
+
+   ```bat
+   embyToLocalPlayer_debug.bat madvr.ini
+   embyToLocalPlayer_debug.bat --config dolby-vision.ini
+   ```
+
+   Choose **1** to keep that instance in a console. After testing, run the command again and choose **2**.
+   Startup entries include the config filename, so the two instances do not overwrite each other's VBS file.
+
+The injector probes both local ports independently and shows **Play in MPC-HC / madVR** and
+**Play in MPC-BE / Dolby Vision** beside Jellyfin's own Play button when the corresponding service responds.
+An absent service produces no button, including on clients without ETLP. Each click goes directly to that
+instance; there is no player-profile parameter. Player selection and existing path-based overrides remain
+controlled by each instance's normal configuration.
+
+To change discovery ports, edit the injector's local `SETTINGS` object, for example:
+
+```js
+const SETTINGS = { endpoints: ['http://127.0.0.1:59000', 'http://127.0.0.1:59001'] };
+```
+
+`MOUNT_DISK_ENABLE` is the separate, prominently placed disk-mode switch. It defaults to `false`, which streams
+through Jellyfin. Set it to `true` only when the client can access the media paths and `[src]`/`[dst]` translate
+the Jellyfin server path to the exact local or mapped-drive path.
+
+Path mapping is a literal prefix replacement; it does not sanitize spaces or parentheses. When Jellyfin reports
+a server folder name that differs from its SMB-visible name, add the specific pair before a general root pair:
+
+```ini
+[src]
+video_temp = /mnt/media/Video-temporary
+media_root = /mnt/media
+
+[dst]
+video_temp = M:\Video (Temporary)
+media_root = M:
+```
+
+Omitted settings use ports `58000` and `58001`, a 5-second request timeout, and probe intervals of 5 seconds
+for available services and 10 seconds for unavailable services. Optional keys are `requestTimeoutMs`,
+`probeIntervalAvailableMs`, and `probeIntervalUnavailableMs`. An empty `endpoints` array disables discovery.
+The browser must permit requests from Jellyfin Web to loopback; an unreachable or blocked endpoint stays hidden.
+
+Without `--config`, existing config discovery and port `58000` remain unchanged. A blank or missing
+`[server] title` uses the configured player name. Restart an instance after changing its port.
+Explicit config files get separate temporary files, relative logs, OAuth token files and download-cache
+subdirectories under a config-path identity; runtime files live under `.instances/`.
+Absolute log paths should be different for each instance. Explicit-config startup skips broad process killing
+and automatic embedded-mpv selection so it does not stop or reconfigure another instance. Use `--config` for
+**both** processes. Player control ports are selected from available ports and mpv pipes get unique names;
+leave `[dev] mpv_input_ipc_server` unset when running multiple mpv instances. If using Trakt or Simkl, register the corresponding instance port in its OAuth redirect URI.
+
+The injector is self-contained and does not replace `window.fetch`, `XMLHttpRequest`, Jellyfin's Play action,
+or browser prototypes. It uses Jellyfin's `ApiClient` only when an ETLP button is pressed.
+
 > Before you begin
 
 * The webpage flashing briefly means it is automatically dismissing the compatible-stream prompt.
@@ -623,8 +707,9 @@ https://github.com/kjtsune/embyToLocalPlayer#faq
   ```
   # Server information, comma-separated within each entry, with each entry ending in a semicolon. If you need multiple servers, continue writing after the semicolon.
   # api_key: Settings > API Keys. user_id: Settings > Users > [username] > look at the browser URL.
-  server_data_group = myself, http://localhost:8096, api_key, user_id;
-                      others, https://www.abc.org, api_key, user_id;
+  # The final server type is optional and defaults to emby. Set it to jellyfin for Jellyfin 12+.
+  server_data_group = myself, http://localhost:8096, api_key, user_id, jellyfin;
+                      others, https://www.abc.org, api_key, user_id, emby;
   # Format: server name from the config above, followed by one or more server-side media path prefixes; multiple servers are also separated by semicolons.
   # Prefetch only when the server path contains the path prefix; use / for all paths
   # strm is a special value used only to scrape media duration information. In this mode, release time and path limits are ignored.
