@@ -74,8 +74,8 @@ class UserScriptRequestHandler(BaseHTTPRequestHandler):
         data = json.loads(self.rfile.read(length))
         configs.update()
         if 'ToLocalPlayer' in self.path:
-            self._post_resopne()
             if data.get('showTaskManager'):
+                self._post_resopne()
                 from utils.gui import show_task_manager
                 # multiprocessing.Process(target=show_task_manager, daemon=True).start()
                 # multiprocessing would copy dl_manager, causing the download task to restart if one is already in progress.

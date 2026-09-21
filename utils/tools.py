@@ -425,7 +425,12 @@ def show_version_info(extra_data=None):
     if not extra_data:
         return py_script_version
     gm_info = extra_data.get('gmInfo')
+    injector_version = extra_data.get('injectorVersion')
     user_agent = extra_data.get('userAgent')
+    if injector_version:
+        _logger.info(f'PyScript/{py_script_version} Injector/{injector_version}')
+        _logger.info(user_agent)
+        return
     if not gm_info:
         _logger.info('userscript info not found, userscript update or reinstall needed')
         return
