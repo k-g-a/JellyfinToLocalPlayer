@@ -42,9 +42,11 @@ class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
 
-def run_server(ip='127.0.0.1', port=58000):
+def run_server(ip='127.0.0.1', port=None):
+    port = configs.server_port if port is None else port
     if not configs.raw.getboolean('dev', 'listen_on_localhost', fallback=True):
         ip = get_machine_ip()
+    configs.local_server_url = f'http://{ip}:{port}'
     server_address = (ip, port)
     httpd = ThreadingHTTPServer(server_address, UserScriptRequestHandler)
     logger.info('serving at http://%s:%d' % server_address)
@@ -53,10 +55,16 @@ def run_server(ip='127.0.0.1', port=58000):
 
 class UserScriptRequestHandler(BaseHTTPRequestHandler):
 
+    def _send_cors_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Private-Network', 'true')
+
     def _post_resopne(self, msg=None, status=200):
         self.send_response(status)
         self.send_header('Content-type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
+        self._send_cors_headers()
         self.end_headers()
         msg = msg or {'msg': 'default'}
         self.wfile.write(json.dumps(msg).encode('utf-8'))
@@ -66,8 +74,8 @@ class UserScriptRequestHandler(BaseHTTPRequestHandler):
         data = json.loads(self.rfile.read(length))
         configs.update()
         if 'ToLocalPlayer' in self.path:
-            self._post_resopne()
             if data.get('showTaskManager'):
+                self._post_resopne()
                 from utils.gui import show_task_manager
                 # multiprocessing.Process(target=show_task_manager, daemon=True).start()
                 # multiprocessing would copy dl_manager, causing the download task to restart if one is already in progress.
@@ -131,9 +139,26 @@ class UserScriptRequestHandler(BaseHTTPRequestHandler):
             self._post_resopne({'msg': f'{self.path} not allow'})
 
     def do_OPTIONS(self):
-        pass
+        self.send_response(204)
+        self._send_cors_headers()
+        self.end_headers()
 
     def do_GET(self):
+        if self.path == '/etlp/status':
+            configs.update()
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Cache-Control', 'no-store')
+            self._send_cors_headers()
+            self.end_headers()
+            self.return_json({
+                'service': 'JellyfinToLocalPlayer',
+                'ready': True,
+                'player': configs.raw.get('emby', 'player'),
+                'title': configs.raw.get('server', 'title', fallback='').strip()
+                         or configs.raw.get('emby', 'player'),
+            })
+            return
         if self.path in ['/', '/favicon.ico']:
             self.send_response(200)
             self.end_headers()

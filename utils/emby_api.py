@@ -5,10 +5,12 @@ import requests
 
 class EmbyApi:
     def __init__(self, host, api_key, user_id, *,
-                 http_proxy=None, socks_proxy=None, cert_verify=True):
+                 server='emby', http_proxy=None, socks_proxy=None, cert_verify=True):
         self.host = host.rstrip('/').split('/web/index')[0]
         self.api_key = api_key
         self.user_id = user_id
+        self.server = server.lower()
+        self.api_prefix = '/emby' if self.server == 'emby' else ''
         self.req = requests.Session()
         if not cert_verify:
             self.req.verify = False
@@ -36,10 +38,13 @@ class EmbyApi:
         self.system_info = None
         self.server_id = None
 
+    def api_url(self, path):
+        return f'{self.host}{self.api_prefix}/{path.lstrip("/")}'
+
     def get(self, path, params=None, get_json=True) -> typing.Union[dict, list, requests.Response]:
         params = params or {'X-Emby-Token': self.api_key}
         params.update({'X-Emby-Token': self.api_key})
-        url = rf'{self.host}/emby/{path}'
+        url = self.api_url(path)
         res = self.req.get(url, params=params, )
         res.raise_for_status()
         return res.json() if get_json else res
@@ -47,7 +52,7 @@ class EmbyApi:
     def post(self, path, _json, params=None):
         params = params or {'X-Emby-Token': self.api_key}
         params.update({'X-Emby-Token': self.api_key})
-        url = rf'{self.host}/emby/{path}'
+        url = self.api_url(path)
         return self.req.post(
             url,
             json=_json,
@@ -245,5 +250,5 @@ class EmbyApi:
             'thumb': 'Primary',
         }
         img_type = api_map.get(img_type)
-        url = f'{self.host}/emby/Items/{item_id}/Images/{img_type}'
+        url = self.api_url(f'Items/{item_id}/Images/{img_type}')
         return url

@@ -3,6 +3,16 @@ import sys
 import threading
 
 
+# Resolve before importing modules: logging and worker processes read this too.
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='Run a local ETLP instance')
+    parser.add_argument('--config', help='INI file for this instance (defaults to existing config discovery)')
+    args = parser.parse_args()
+    if args.config:
+        os.environ['ETLP_CONFIG'] = os.path.abspath(args.config)
+
+
 try:
     sys.path.insert(0, os.path.dirname(__file__))
 except Exception:
@@ -16,7 +26,7 @@ from utils.net_tools import check_redirect_cache_expired_loop
 if __name__ == '__main__':
     os.chdir(configs.cwd)
     configs.print_version()
-    if configs.raw.getboolean('dev', 'kill_process_at_start', fallback=True):
+    if not configs.explicit_config and configs.raw.getboolean('dev', 'kill_process_at_start', fallback=True):
         kill_multi_process(name_re=f'(embyToLocalPlayer.py|autohotkey_tool|' +
                                    r'mpv.*exe|mpc-.*exe|vlc.exe|PotPlayer.*exe|' +
                                    r'/IINA|/VLC|/mpv)',

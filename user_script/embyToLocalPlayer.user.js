@@ -324,6 +324,21 @@
     }
 
     let serverName = null;
+
+    function detectServerName() {
+        if (serverName === null && typeof ApiClient !== 'undefined') {
+            let appName = ApiClient._appName || ApiClient._serverInfo?.ProductName;
+            serverName = appName ? appName.split(' ')[0].toLowerCase() : null;
+        }
+        return serverName;
+    }
+
+    function getApiUrl(path) {
+        let serverAddress = ApiClient._serverAddress || window.location.origin;
+        let apiPrefix = detectServerName() === 'emby' ? '/emby' : '';
+        return `${serverAddress.replace(/\/$/, '')}${apiPrefix}/${path.replace(/^\//, '')}`;
+    }
+
     let episodesInfoCache = []; // ['type:[Episodes|NextUp|Items]', resp]
     let episodesInfoRe = /\/Episodes\?IsVirtual|\/NextUp\?Series|\/Items\?ParentId=\w+&Filters=IsNotFolder&Recursive=true/; // Items already excludes playlists
     // Click location: Episodes = Continue Watching; if it is Up Next, it may only contain one episode's info | NextUp = new playback or library playback | Items = season playback. Only Episodes returns data for all episodes.
@@ -558,6 +573,7 @@
             mainEpInfo: mainEpInfo,
             episodesInfo: episodesInfoData,
             playlistInfo: playlistData,
+            serverName: detectServerName(),
             gmInfo: GM_info,
             userAgent: navigator.userAgent,
         }
@@ -603,7 +619,7 @@
             'UserId': userId,
             'IsPlayback': true
         };
-        let baseUrl = `${window.location.origin}/emby/Items/${itemId}/PlaybackInfo`;
+        let baseUrl = getApiUrl(`Items/${itemId}/PlaybackInfo`);
         let searchParams = new URLSearchParams(urlParams);
         let playbackUrl = `${baseUrl}?${searchParams.toString()}`;
         let episodesInfo = episodesInfoData?.Items || [];
@@ -611,10 +627,25 @@
             mainEpInfo: mainEpInfo,
             episodesInfo: episodesInfo,
             playlistInfo: [],
+            serverName: detectServerName(),
             gmInfo: GM_info,
             userAgent: navigator.userAgent,
         }
-        embyToLocalPlayer(playbackUrl, {}, playbackData, extraData)
+        let requestHeaders = {
+            'X-Emby-Token': accessToken,
+            'X-Emby-Device-Id': deviceId,
+        };
+        if (detectServerName() === 'jellyfin') {
+            requestHeaders.Authorization = [
+                `MediaBrowser Client="${ApiClient._appName || 'Jellyfin Web'}"`,
+                `Device="${ApiClient._deviceName || 'Browser'}"`,
+                `DeviceId="${deviceId}"`,
+                `Version="${ApiClient._appVersion || ''}"`,
+                `Token="${accessToken}"`,
+            ].join(', ');
+        }
+        let request = { headers: requestHeaders };
+        embyToLocalPlayer(playbackUrl, request, playbackData, extraData)
     }
 
     document.addEventListener('click', e => {
@@ -711,7 +742,7 @@
         let urlStr = isStrInput ? input : input.url;
 
         if (serverName === null) {
-            serverName = typeof ApiClient === 'undefined' ? null : ApiClient._appName.split(' ')[0].toLowerCase();
+            detectServerName();
         } else {
             if (typeof ApiClient != 'undefined' && ApiClient._deviceName != 'embyToLocalPlayer' && localStorage.getItem(etlpStorageKeys.webPlayerEnable) != 'true') {
                 ApiClient._deviceName = 'embyToLocalPlayer'
@@ -905,6 +936,7 @@
                     .then(response => response.json())
                     .then((res) => {
                         let extraData = {
+                            serverName: serverName,
                             gmInfo: GM_info,
                             userAgent: navigator.userAgent,
                         };

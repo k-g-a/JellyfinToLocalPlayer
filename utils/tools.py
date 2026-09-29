@@ -34,7 +34,7 @@ def safe_deleter(file, ext: Union[str, list, tuple] = ('mkv', 'mp4', 'srt', 'ass
 
 
 def clean_tmp_dir():
-    tmp = os.path.join(configs.cwd, '.tmp')
+    tmp = configs.tmp_dir
     if os.path.isdir(tmp):
         for file in os.listdir(tmp):
             os.remove(os.path.join(tmp, file))
@@ -425,7 +425,12 @@ def show_version_info(extra_data=None):
     if not extra_data:
         return py_script_version
     gm_info = extra_data.get('gmInfo')
+    injector_version = extra_data.get('injectorVersion')
     user_agent = extra_data.get('userAgent')
+    if injector_version:
+        _logger.info(f'PyScript/{py_script_version} Injector/{injector_version}')
+        _logger.info(user_agent)
+        return
     if not gm_info:
         _logger.info('userscript info not found, userscript update or reinstall needed')
         return

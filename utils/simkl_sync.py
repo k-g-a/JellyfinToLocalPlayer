@@ -141,9 +141,10 @@ def simkl_api_client(received_code=None):
         client_id=client_id,
         client_secret=client_secret,
         oauth_code=oauth_code,
-        token_file=os.path.join(configs.cwd, 'simkl_token.json'),
+        token_file=os.path.join(configs.runtime_dir, 'simkl_token.json'),
         http_proxy=configs.script_proxy,
-        code_received=code_received)
+        code_received=code_received,
+        callback_port=configs.server_port)
     return simkl
 
 

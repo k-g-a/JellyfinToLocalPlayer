@@ -8,13 +8,14 @@ import requests
 class SimklApi:
 
     def __init__(self, client_id, client_secret, token_file=None, oauth_code=None, http_proxy=None,
-                 code_received=False, app_name='embyToLocalPlayer', app_version='1.1'):
+                 code_received=False, app_name='embyToLocalPlayer', app_version='1.1', callback_port=58000):
+        self.callback_port = callback_port
         self.base_url = 'https://api.simkl.com'
         self.client_id = client_id
         self.client_secret = client_secret
         self.app_name = app_name
         self.app_version = app_version
-        self.redirect_uri = 'http://localhost:58000/simkl_auth'
+        self.redirect_uri = f'http://localhost:{self.callback_port}/simkl_auth'
         self.req = requests.Session()
         self.req.headers.update({'Content-Type': 'application/json',
                                  'User-Agent': f'{app_name}/{app_version}'})

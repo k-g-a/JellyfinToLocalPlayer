@@ -9,7 +9,8 @@ import requests
 
 class TraktApi:
     def __init__(self, user_id, client_id, client_secret, token_file=None, oauth_code=None, http_proxy=None,
-                 code_received=False):
+                 code_received=False, callback_port=58000):
+        self.callback_port = callback_port
         self.base_url = 'https://api.trakt.tv'
         self.user_id = user_id
         self.client_id = client_id
@@ -219,7 +220,7 @@ class TraktApi:
             'code': oauth_code,
             'client_id': self.client_id,
             'client_secret': self.client_secret,
-            'redirect_uri': 'http://localhost:58000/trakt_auth',
+            'redirect_uri': f'http://localhost:{self.callback_port}/trakt_auth',
             'grant_type': 'authorization_code'
         })
         if not res.get('access_token'):
@@ -270,7 +271,7 @@ class TraktApi:
 
     def _open_browser(self):
         url = f'https://trakt.tv/oauth/authorize?client_id={self.client_id}' \
-              f'&redirect_uri=http://localhost:58000/trakt_auth&response_type=code'
+              f'&redirect_uri=http://localhost:{self.callback_port}/trakt_auth&response_type=code'
         if os.name == 'nt':
             os.startfile(url)
         else:
