@@ -5,7 +5,7 @@ const { JSDOM } = require('jsdom');
 const source = fs.readFileSync('user_script/embyToLocalPlayer.injector.js', 'utf8');
 const tick = () => new Promise(resolve => setTimeout(resolve, 120));
 (async () => {
-    const dom = new JSDOM('<div class="itemDetailPage"><button class="btnPlay">Play</button><select class="selectAudio"><option value="2" selected>Audio</option></select></div>', {
+    const dom = new JSDOM('<div class="itemDetailPage"><button id="native-play" class="button-flat btnPlay device-play"><span id="native-icon" class="material-icons play_arrow"></span><span class="button-text">Play</span></button><select class="selectAudio"><option value="2" selected>Audio</option></select></div>', {
         url: 'https://jellyfin.test/web/#/details?id=movie', runScripts: 'outside-only',
     });
     const w = dom.window;
@@ -15,7 +15,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 120));
     native.onclick = () => nativeClicks++;
     const posts = [];
     const statuses = [
-        { service: 'JellyfinToLocalPlayer', ready: true, title: 'madVR', player: 'hc' },
+        { service: 'JellyfinToLocalPlayer', ready: true, title: 'madVR', shortTitle: 'HC', player: 'hc' },
         { service: 'JellyfinToLocalPlayer', ready: true, player: 'be' },
     ];
     w.fetch = async (url, options) => {
@@ -38,22 +38,28 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 120));
     w.eval(script);
     await tick();
     const buttons = () => [...w.document.querySelectorAll('.etlp-player-button')];
-    assert.deepEqual(buttons().map(b => b.textContent), ['Play in madVR', 'Play in be']);
+    assert.deepEqual(buttons().map(b => b.querySelector('.button-text').textContent), ['Play', 'Play']);
+    assert.deepEqual(buttons().map(b => b.querySelector('.etlp-player-button-badge').textContent), ['HC', 'ex']);
+    assert.deepEqual(buttons().map(b => b.title), ['madVR', 'be']);
+    assert(buttons().every(b => b.classList.contains('button-flat') && b.classList.contains('device-play')));
+    assert(buttons().every(b => !b.id && !b.querySelector('[id]')));
     assert.equal(native.nextElementSibling, buttons()[0]);
     for (const button of buttons()) { button.click(); await tick(); }
     assert.deepEqual(posts.map(p => new URL(p.url).port), ['58000', '58001']);
     assert(posts.every(p => !('playerProfile' in p.data)));
     assert(posts.every(p => p.data.mountDiskEnable === 'false'));
     assert(posts.every(p => p.data.playbackUrl.includes('AudioStreamIndex=2')));
+    assert.equal(nativeClicks, 0);
     statuses[0] = null;
     await tick();
-    assert.deepEqual(buttons().map(b => b.textContent), ['Play in be']);
+    assert.deepEqual(buttons().map(b => b.querySelector('.etlp-player-button-badge').textContent), ['ex']);
     statuses[1] = { service: 'unrelated', ready: true };
     await tick();
     assert.equal(buttons().length, 0);
-    statuses[0] = { service: 'JellyfinToLocalPlayer', ready: true, title: '<b>mpv</b>' };
+    statuses[0] = { service: 'JellyfinToLocalPlayer', ready: true, title: '<b>mpv</b>', shortTitle: '<b' };
     await tick();
-    assert.equal(buttons()[0].textContent, 'Play in <b>mpv</b>');
+    assert.equal(buttons()[0].title, '<b>mpv</b>');
+    assert.equal(buttons()[0].querySelector('.etlp-player-button-badge').textContent, '<b');
     assert.equal(buttons()[0].querySelector('b'), null);
     w.eval(script);
     await tick();
@@ -66,5 +72,5 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 120));
     await tick();
     assert.equal(buttons().length, 0);
     dom.window.close();
-    console.log('Injector: discovery, independent failure/recovery, labels, routing, tracks, navigation and globals passed');
+    console.log('Injector: native buttons, badges, discovery, routing, tracks, navigation and globals passed');
 })().catch(error => { console.error(error); process.exit(1); });

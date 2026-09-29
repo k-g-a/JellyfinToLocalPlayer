@@ -66,6 +66,7 @@ general-purpose userscript extension access to browser pages.
    | `[emby] player` | `hc` | `be` | Keep your existing player selection |
    | `[server] port` | `58000` | `58001` | `58000` |
    | `[server] title` | `MPC-HC / madVR` | `MPC-BE / Dolby Vision` | Value of `[emby] player` |
+   | `[server] short_title` | `HC` | `BE` | `ex` |
 
 5. Start each instance in a separate terminal using your existing Python environment:
 
@@ -85,11 +86,12 @@ general-purpose userscript extension access to browser pages.
    Choose **1** to keep that instance in a console. After testing, run the command again and choose **2**.
    Startup entries include the config filename, so the two instances do not overwrite each other's VBS file.
 
-The injector probes both local ports independently and shows **Play in MPC-HC / madVR** and
-**Play in MPC-BE / Dolby Vision** beside Jellyfin's own Play button when the corresponding service responds.
-An absent service produces no button, including on clients without ETLP. Each click goes directly to that
-instance; there is no player-profile parameter. Player selection and existing path-based overrides remain
-controlled by each instance's normal configuration.
+The injector probes both local ports independently and clones Jellyfin's own Play button for each corresponding
+service that responds. This preserves the native button appearance on each device. A small bottom-right badge
+uses `[server] short_title`, or `ex` when it is blank or missing. Hovering uses the browser's built-in tooltip to
+show `[server] title`; no custom tooltip is added. An absent service produces no button, including on clients
+without ETLP. Each click goes directly to that instance; there is no player-profile parameter. Player selection
+and existing path-based overrides remain controlled by each instance's normal configuration.
 
 To change discovery ports, edit the injector's local `SETTINGS` object, for example:
 
@@ -120,7 +122,8 @@ for available services and 10 seconds for unavailable services. Optional keys ar
 The browser must permit requests from Jellyfin Web to loopback; an unreachable or blocked endpoint stays hidden.
 
 Without `--config`, existing config discovery and port `58000` remain unchanged. A blank or missing
-`[server] title` uses the configured player name. Restart an instance after changing its port.
+`[server] title` uses the configured player name. `[server] short_title` is optional and accepts at most two
+characters. Title changes appear after the next status probe; restart an instance after changing its port.
 Explicit config files get separate temporary files, relative logs, OAuth token files and download-cache
 subdirectories under a config-path identity; runtime files live under `.instances/`.
 Absolute log paths should be different for each instance. Explicit-config startup skips broad process killing

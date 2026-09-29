@@ -157,6 +157,7 @@ class UserScriptRequestHandler(BaseHTTPRequestHandler):
                 'player': configs.raw.get('emby', 'player'),
                 'title': configs.raw.get('server', 'title', fallback='').strip()
                          or configs.raw.get('emby', 'player'),
+                'shortTitle': configs.server_short_title,
             })
             return
         if self.path in ['/', '/favicon.ico']:
