@@ -28,6 +28,7 @@ with tempfile.TemporaryDirectory() as directory:
             port = free_port()
             config['server']['port'] = str(port)
             config['server']['title'] = 'madVR' if index == 0 else ''
+            config['server']['short_title'] = 'HC' if index == 0 else ''
             config['emby']['player'] = 'hc' if index == 0 else 'be'
             config['dev']['log_file'] = ''
             config['dev']['use_system_proxy'] = 'no'
@@ -66,6 +67,7 @@ run_server()
                 raise AssertionError('Instance never became ready')
             assert status['ready'] and status['service'] == 'JellyfinToLocalPlayer'
             assert status['title'] == ('madVR' if index == 0 else 'be')
+            assert status['shortTitle'] == ('HC' if index == 0 else '')
             assert 'playerProfiles' not in status
             with opener.open(urllib.request.Request(f'http://127.0.0.1:{port}/etlp/status', method='OPTIONS')) as response:
                 assert response.status == 204
@@ -86,7 +88,14 @@ run_server()
             failed = subprocess.run([sys.executable, '-c', check], env={**os.environ, 'ETLP_CONFIG': str(legacy)},
                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             assert failed.returncode != 0
-        print('Instances: concurrent status/CORS, title fallback, isolated state, legacy port and validation passed')
+        config['server'] = {'port': '58000', 'short_title': 'long'}
+        with legacy.open('w') as file:
+            config.write(file)
+        failed = subprocess.run([sys.executable, '-c', 'from utils.configs import configs'],
+                                env={**os.environ, 'ETLP_CONFIG': str(legacy)},
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        assert failed.returncode != 0
+        print('Instances: status labels, CORS, isolated state, legacy defaults and validation passed')
     finally:
         for process, _, _ in processes:
             process.terminate()

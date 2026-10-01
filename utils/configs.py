@@ -232,6 +232,9 @@ class Configs:
         config = ConfigParser()
         config.read(self.path, encoding='utf-8-sig')
         self.raw = config
+        self.server_short_title = self.raw.get('server', 'short_title', fallback='').strip()
+        if len(self.server_short_title) > 2:
+            raise ValueError('[server] short_title must be at most 2 characters')
         self.fullscreen = self.raw.getboolean('emby', 'fullscreen', fallback=True)
         self.debug_mode = self.raw.getboolean('dev', 'debug', fallback=False)
         self.disable_audio = self.raw.getboolean('dev', 'disable_audio', fallback=False)  # test in vm

@@ -8,6 +8,7 @@
 
     const STYLE_ID = 'etlp-injector-style';
     const BUTTON_CLASS = 'etlp-player-button';
+    const BADGE_CLASS = 'etlp-player-button-badge';
     // Edit only these local settings when using different instance ports.
     // Missing settings retain the defaults below; an empty endpoints array disables discovery.
     const SETTINGS = {};
@@ -16,7 +17,7 @@
     const endpoints = [...new Set(SETTINGS.endpoints ?? [
         'http://127.0.0.1:58000',
         'http://127.0.0.1:58001',
-    ])].map(url => ({ url: url.replace(/\/$/, ''), available: false, title: '' }));
+    ])].map(url => ({ url: url.replace(/\/$/, ''), available: false, title: '', shortTitle: 'ex' }));
     const PROBE_INTERVAL_AVAILABLE_MS = SETTINGS.probeIntervalAvailableMs ?? 5000;
     const PROBE_INTERVAL_UNAVAILABLE_MS = SETTINGS.probeIntervalUnavailableMs ?? 10000;
     const REQUEST_TIMEOUT_MS = SETTINGS.requestTimeoutMs ?? 5000;
@@ -36,43 +37,21 @@
         style.id = STYLE_ID;
         style.textContent = `
             .${BUTTON_CLASS} {
-                align-items: center;
-                border: 0;
-                border-radius: 0.45em;
-                box-sizing: border-box;
-                color: inherit;
-                cursor: pointer;
-                display: inline-flex;
-                gap: 0.4em;
-                justify-content: center;
-                margin: 0 0.15em;
-                min-height: 2.75em;
-                padding: 0.55em 0.8em;
-                white-space: nowrap;
-            }
-
-            .${BUTTON_CLASS}:hover {
-                background: rgba(255, 255, 255, 0.14);
-            }
-
-            .${BUTTON_CLASS}:focus-visible {
-                outline: 0.16em solid currentColor;
-                outline-offset: 0.12em;
+                position: relative;
             }
 
             .${BUTTON_CLASS}:disabled {
                 cursor: progress;
-                opacity: 0.55;
             }
 
-            .${BUTTON_CLASS} .etlp-player-button-icon {
-                font-size: 1.65em;
-            }
-
-            .${BUTTON_CLASS} .etlp-player-button-label {
-                font-size: 0.92em;
-                font-weight: 600;
+            .${BUTTON_CLASS} .${BADGE_CLASS} {
+                bottom: 0.16em;
+                font-size: 0.55em;
+                font-weight: 700;
                 line-height: 1;
+                pointer-events: none;
+                position: absolute;
+                right: 0.24em;
             }
 
             .etlp-toast {
@@ -168,8 +147,8 @@
 
     function findNativePlayButton() {
         const candidates = document.querySelectorAll([
-            '.itemDetailPage .btnPlay:not(.hide)',
-            '.itemDetailPage .btnPlayOrResume',
+            `.itemDetailPage .btnPlay:not(.hide):not(.${BUTTON_CLASS})`,
+            `.itemDetailPage .btnPlayOrResume:not(.${BUTTON_CLASS})`,
         ].join(','));
         return Array.from(candidates).find(isVisible) || null;
     }
@@ -201,29 +180,35 @@
         document.querySelectorAll(`.${BUTTON_CLASS}`).forEach(button => button.remove());
     }
 
-    function createPlayerButton(endpoint, itemId) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = `button-flat ${BUTTON_CLASS}`;
+    function createPlayerButton(endpoint, itemId, nativePlayButton) {
+        // Clone Jellyfin's own button so its device-specific markup and CSS stay authoritative.
+        // cloneNode does not copy event listeners registered by Jellyfin.
+        const button = nativePlayButton.cloneNode(true);
+        [button, ...button.querySelectorAll('*')].forEach(element => {
+            element.removeAttribute('id');
+            Array.from(element.attributes)
+                .filter(attribute => attribute.name.toLowerCase().startsWith('on'))
+                .forEach(attribute => element.removeAttribute(attribute.name));
+        });
+        button.classList.add(BUTTON_CLASS);
+        if (button.tagName === 'BUTTON') {
+            button.type = 'button';
+        }
         button.dataset.etlpEndpoint = endpoint.url;
         button.disabled = state.busy;
         button.setAttribute('aria-busy', String(state.busy));
         button.dataset.etlpItemId = itemId;
-        button.title = `Play in ${endpoint.title}`;
+        button.title = endpoint.title;
         button.setAttribute('aria-label', `Play in ${endpoint.title}`);
 
-        const icon = document.createElement('span');
-        icon.className = 'material-icons etlp-player-button-icon play_arrow';
-        icon.setAttribute('aria-hidden', 'true');
-
-        const label = document.createElement('span');
-        label.className = 'etlp-player-button-label';
-        label.textContent = `Play in ${endpoint.title}`;
-
-        button.append(icon, label);
+        const badge = document.createElement('span');
+        badge.className = BADGE_CLASS;
+        badge.textContent = endpoint.shortTitle;
+        badge.setAttribute('aria-hidden', 'true');
+        button.appendChild(badge);
         button.addEventListener('click', event => {
             event.preventDefault();
-            event.stopPropagation();
+            event.stopImmediatePropagation();
             launchPlayer(endpoint, button).catch(error => {
                 console.error('[ETLP] Unable to start local playback:', error);
                 showToast(error.message || 'Unable to start local playback.', true);
@@ -251,7 +236,9 @@
             && existingButtons.every(button => button.dataset.etlpItemId === itemId)
             && existingButtons.every(button => button.parentElement === nativePlayButton.parentElement)
             && expectedEndpoints.every(endpoint => existingButtons.some(button =>
-                button.dataset.etlpEndpoint === endpoint.url && button.title === `Play in ${endpoint.title}`));
+                button.dataset.etlpEndpoint === endpoint.url
+                && button.title === endpoint.title
+                && button.querySelector(`.${BADGE_CLASS}`)?.textContent === endpoint.shortTitle));
 
         if (isCurrent) {
             return;
@@ -259,7 +246,8 @@
 
         removeButtons();
         const fragment = document.createDocumentFragment();
-        expectedEndpoints.forEach(endpoint => fragment.appendChild(createPlayerButton(endpoint, itemId)));
+        expectedEndpoints.forEach(endpoint =>
+            fragment.appendChild(createPlayerButton(endpoint, itemId, nativePlayButton)));
         nativePlayButton.after(fragment);
     }
 
@@ -283,6 +271,7 @@
             const status = await response.json();
             endpoint.available = status.service === 'JellyfinToLocalPlayer' && status.ready === true;
             endpoint.title = String(status.title || status.player || 'local player');
+            endpoint.shortTitle = Array.from(String(status.shortTitle || 'ex')).slice(0, 2).join('');
         } catch (_error) {
             endpoint.available = false;
         } finally {
