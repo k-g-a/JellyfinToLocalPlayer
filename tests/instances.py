@@ -24,12 +24,12 @@ with tempfile.TemporaryDirectory() as directory:
     try:
         for index in range(2):
             config = configparser.ConfigParser()
-            config.read(root / 'embyToLocalPlayer_config.ini', encoding='utf-8-sig')
+            config.read(root / 'config.ini', encoding='utf-8-sig')
             port = free_port()
             config['server']['port'] = str(port)
             config['server']['title'] = 'madVR' if index == 0 else ''
             config['server']['short_title'] = 'HC' if index == 0 else ''
-            config['emby']['player'] = 'hc' if index == 0 else 'be'
+            config['jellyfin']['player'] = 'hc' if index == 0 else 'be'
             config['dev']['log_file'] = ''
             config['dev']['use_system_proxy'] = 'no'
             config['gui'] = {'cache_path': str(directory / 'cache')}
@@ -39,10 +39,10 @@ with tempfile.TemporaryDirectory() as directory:
             result = directory / f'{index}.json'
             code = '''
 import json, sys
-from utils.configs import configs
-from utils.players import get_pipe_or_port_str
-from utils.http_server import run_server
-from utils.tools import clean_tmp_dir
+from code.configs import configs
+from code.players import get_pipe_or_port_str
+from code.http_server import run_server
+from code.tools import clean_tmp_dir
 clean_tmp_dir()
 with open(sys.argv[1], 'w') as file:
     json.dump(dict(tmp=configs.tmp_dir, cache=configs.cache_path, runtime=configs.runtime_dir,
@@ -79,7 +79,7 @@ run_server()
         config.remove_section('server')
         with legacy.open('w') as file:
             config.write(file)
-        check = 'from utils.configs import configs; assert configs.server_port == 58000'
+        check = 'from code.configs import configs; assert configs.server_port == 58000'
         subprocess.run([sys.executable, '-c', check], env={**os.environ, 'ETLP_CONFIG': str(legacy)}, check=True)
         for value in ('0', '65536', 'invalid'):
             config['server'] = {'port': value}
@@ -91,7 +91,7 @@ run_server()
         config['server'] = {'port': '58000', 'short_title': 'long'}
         with legacy.open('w') as file:
             config.write(file)
-        failed = subprocess.run([sys.executable, '-c', 'from utils.configs import configs'],
+        failed = subprocess.run([sys.executable, '-c', 'from code.configs import configs'],
                                 env={**os.environ, 'ETLP_CONFIG': str(legacy)},
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         assert failed.returncode != 0
