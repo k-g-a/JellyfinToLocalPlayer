@@ -1,4 +1,5 @@
 @echo OFF
+set "PATH=%SystemRoot%\System32;%PATH%"
 chcp 65001
 setlocal
 
