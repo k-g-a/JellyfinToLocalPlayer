@@ -32,7 +32,8 @@ MPC-HC/MPC-BE check with Jellyfin: launch, resume, seek, close/report, next epis
 
 The release trigger remains a push/merge to `fork-release`, or manual dispatch of that branch's
 `.github/workflows/fork-release.yml`. After reviewing and merging the PR into `translate`, merge that commit
-into `fork-release` to publish. Opening or merging a PR into `translate` does not publish a release.
+into `fork-release` to publish. PRs against `translate` build and smoke-test the Windows packages without
+publishing. Opening or merging a PR into `translate` does not publish a release.
 
 The release builder includes `main.py`, `config.ini`, `launch.bat`, `code/`, `scripts/`, docs and requirements:
 

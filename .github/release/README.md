@@ -1,15 +1,16 @@
 # Fork release pipeline
 
-Every push or merge to the `fork-release` branch builds and publishes a GitHub release containing:
+PRs targeting `translate` build and smoke-test the packages without publishing.
+Push/merge to `fork-release` (or manually dispatch on that branch) to publish:
 
-- `embyToLocalPlayer.zip` for Windows with an installed system Python;
-- `etlp-python-embed-win32.zip` with the pinned upstream `python_embed` runtime.
+- `JellyfinToLocalPlayer.zip`: system Python.
+- `JellyfinToLocalPlayer-python-embed-win32.zip`: portable Windows embedded Python.
 
-Both archives retain the upstream filenames and contain this fork's backend, configuration, launcher,
-documentation, userscripts, and Jellyfin JavaScript Injector script. Only the embedded runtime is taken from
-the upstream binary archive. The packaged updater URL is changed to this fork's latest release; the tracked
-source file is not changed.
+Both archives contain `main.py`, `config.ini`, `launch.bat`, `code/`, `scripts/`, documentation and
+requirements from this fork. Removed integrations, tests, tokens and instance state are not packaged.
+Only `python_embed/` comes from the pinned original-author runtime archive. The source updater already
+points to this fork; the builder does not rewrite source code.
 
-To update the embedded runtime, change `UPSTREAM_EMBED_RELEASE` and, if needed,
-`UPSTREAM_EMBED_ASSET` in `.github/workflows/fork-release.yml`. The build fails if the downloaded archive
-does not contain `python_embed/python.exe` or either output archive is missing a required project file.
+The build validates the layout, compiles the backend and starts the packaged backend with both system
+and embedded Python before publishing. Update `UPSTREAM_EMBED_RELEASE` and `UPSTREAM_EMBED_ASSET`
+only when changing the runtime deliberately. See [development.md](../../docs/development.md).

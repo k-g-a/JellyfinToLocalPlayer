@@ -77,9 +77,11 @@ run_server()
         # Missing new server section preserves the old port; missing file and bad ports fail.
         legacy = directory / 'legacy.ini'
         config.remove_section('server')
+        config['emby'] = dict(config['jellyfin'])
+        config.remove_section('jellyfin')
         with legacy.open('w') as file:
             config.write(file)
-        check = 'from code.configs import configs; assert configs.server_port == 58000'
+        check = "from code.configs import configs; assert configs.server_port == 58000; assert configs.raw['jellyfin']['player'] == 'be'"
         subprocess.run([sys.executable, '-c', check], env={**os.environ, 'ETLP_CONFIG': str(legacy)}, check=True)
         for value in ('0', '65536', 'invalid'):
             config['server'] = {'port': value}

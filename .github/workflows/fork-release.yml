@@ -5,6 +5,9 @@ on:
     branches:
       - fork-release
   workflow_dispatch:
+  pull_request:
+    branches:
+      - translate
 
 permissions:
   contents: write
@@ -19,6 +22,7 @@ env:
 
 jobs:
   release:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/fork-release'
     runs-on: windows-latest
     steps:
       - name: Check out release source
@@ -34,9 +38,16 @@ jobs:
         shell: pwsh
         run: |
           python .github/release/build_release.py --embedded-python-archive upstream-embed.zip --output artifacts
-          python -m compileall -q embyToLocalPlayer.py utils
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m compileall -q main.py code
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install -r requirements.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/release.py --artifacts artifacts --run-embedded
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Publish GitHub release
+        if: github.ref == 'refs/heads/fork-release'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -47,9 +58,11 @@ jobs:
           @"
           Windows packages built from fork-release commit $shortSha.
 
-          - embyToLocalPlayer.zip: source package for an installed system Python. Install requirements.txt first.
-          - etlp-python-embed-win32.zip: portable package with the pinned upstream embedded Python runtime.
-          - The Jellyfin JavaScript Injector script is at user_script/embyToLocalPlayer.injector.js in both archives.
+          - JellyfinToLocalPlayer.zip: source package for an installed system Python. Install requirements.txt first.
+          - JellyfinToLocalPlayer-python-embed-win32.zip: portable package with the pinned upstream embedded Python runtime.
+          - The Jellyfin JavaScript Injector script is at scripts/jellyfinToLocalPlayer.injector.js in both archives.
+
+          Start with launch.bat. Existing installations must follow docs/migration.md.
 
           Embedded runtime source: kjtsune/embyToLocalPlayer release $env:UPSTREAM_EMBED_RELEASE.
           "@ | Set-Content -Path release-notes.md

@@ -1,7 +1,7 @@
 """Build the fork's two Windows release archives.
 
-The source tree keeps upstream names and layout. The embedded archive borrows
-only the pinned python_embed directory from upstream's binary release.
+Both packages use the Jellyfin-only application layout. Only python_embed is
+borrowed from the pinned original-author runtime archive.
 """
 
 from __future__ import annotations
@@ -14,47 +14,22 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[2]
-UPSTREAM_UPDATE_URL = (
-    "https://github.com/kjtsune/embyToLocalPlayer/releases/latest/"
-    "download/embyToLocalPlayer.zip"
-)
-FORK_UPDATE_URL = (
-    "https://github.com/k-g-a/JellyfinToLocalPlayer/releases/latest/"
-    "download/embyToLocalPlayer.zip"
-)
+SOURCE_ASSET = "JellyfinToLocalPlayer.zip"
+EMBEDDED_ASSET = "JellyfinToLocalPlayer-python-embed-win32.zip"
 
 
 def copy_project(destination: Path) -> None:
     destination.mkdir(parents=True)
     for filename in (
-        "embyToLocalPlayer.py",
-        "embyToLocalPlayer_config.ini",
-        "LICENSE",
-        "README.md",
+        "main.py", "config.ini", "launch.bat", "launch.command",
+        "launch-via-screen.command", "LICENSE", "README.md", "requirements.txt",
     ):
         shutil.copy2(ROOT / filename, destination / filename)
-
-    shutil.copy2(
-        ROOT / "utils/others/embyToLocalPlayer_debug.bat",
-        destination / "embyToLocalPlayer_debug.bat",
-    )
-    shutil.copytree(
-        ROOT / "utils",
-        destination / "utils",
-        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
-    )
-    shutil.copytree(ROOT / "user_script", destination / "user_script")
-
-    updater = destination / "utils/update.py"
-    content = updater.read_text(encoding="utf-8")
-    if UPSTREAM_UPDATE_URL not in content:
-        raise RuntimeError("Upstream updater URL changed; refusing to build a misleading release")
-    updater.write_text(content.replace(UPSTREAM_UPDATE_URL, FORK_UPDATE_URL), encoding="utf-8")
-
-    (destination / "requirements.txt").write_text(
-        "requests>=2.28,<3\n",
-        encoding="utf-8",
-    )
+    for directory in ("code", "scripts", "docs"):
+        shutil.copytree(
+            ROOT / directory, destination / directory,
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        )
 
 
 def add_embedded_python(archive: Path, destination: Path) -> None:
@@ -67,7 +42,7 @@ def add_embedded_python(archive: Path, destination: Path) -> None:
             except ValueError:
                 continue
             relative = parts[runtime_index:]
-            if not relative or ".." in relative:
+            if not relative or ".." in parts or "\\" in member.filename or ":" in member.filename:
                 raise RuntimeError(f"Unsafe embedded runtime entry: {member.filename}")
             runtime_members.append((member, relative))
 
@@ -98,16 +73,23 @@ def validate_archive(path: Path, embedded: bool) -> None:
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
     required = {
-        "embyToLocalPlayer.py",
-        "embyToLocalPlayer_config.ini",
-        "embyToLocalPlayer_debug.bat",
-        "user_script/embyToLocalPlayer.injector.js",
-        "utils/configs.py",
+        "main.py",
+        "config.ini",
+        "launch.bat",
+        "scripts/jellyfinToLocalPlayer.injector.js",
+        "code/configs.py",
+        "code/__init__.py",
+        "docs/migration.md",
         "requirements.txt",
     }
     missing = required - names
     if missing:
         raise RuntimeError(f"{path.name} is missing: {sorted(missing)}")
+    forbidden = [name for name in names if not name.startswith("python_embed/") and (name.startswith((
+        "utils/", "user_script/", "emby", "qbittorrent", ".instances/"))
+        or "__pycache__" in name or name.endswith((".user.js", ".lua", "_token.json")))]
+    if forbidden:
+        raise RuntimeError(f"Unexpected release files: {sorted(forbidden)}")
     has_python = "python_embed/python.exe" in names
     if has_python != embedded:
         raise RuntimeError(f"{path.name}: embedded Python state is {has_python}, expected {embedded}")
@@ -128,8 +110,8 @@ def main() -> None:
         shutil.copytree(system_package, embedded_package)
         add_embedded_python(args.embedded_python_archive, embedded_package)
 
-        system_zip = args.output / "embyToLocalPlayer.zip"
-        embedded_zip = args.output / "etlp-python-embed-win32.zip"
+        system_zip = args.output / SOURCE_ASSET
+        embedded_zip = args.output / EMBEDDED_ASSET
         write_zip(system_package, system_zip)
         write_zip(embedded_package, embedded_zip)
         validate_archive(system_zip, embedded=False)
