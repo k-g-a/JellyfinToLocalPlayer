@@ -1,0 +1,81 @@
+name: PR 3 test prerelease
+
+on:
+  push:
+    branches:
+      - 'test-release/pr-3-*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pr-3-test-prerelease
+  cancel-in-progress: false
+
+env:
+  PR_COMMIT: 'e8b7aff0044e280621e1e82cf0f45e17a2eba570'
+  TEST_TAG: 'pr-3-test-2026.10.08-e8b7aff'
+  UPSTREAM_EMBED_RELEASE: '2026.07.18'
+  UPSTREAM_EMBED_ASSET: 'etlp-python-embed-win32.zip'
+
+jobs:
+  prerelease:
+    if: startsWith(github.ref, 'refs/heads/test-release/pr-3-')
+    runs-on: windows-latest
+    steps:
+      - name: Check out the exact PR commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PR_COMMIT }}
+
+      - name: Download pinned embedded Python
+        shell: pwsh
+        run: |
+          $url = "https://github.com/kjtsune/embyToLocalPlayer/releases/download/$env:UPSTREAM_EMBED_RELEASE/$env:UPSTREAM_EMBED_ASSET"
+          Invoke-WebRequest -Uri $url -OutFile upstream-embed.zip
+
+      - name: Build and test both packages
+        shell: pwsh
+        run: |
+          python .github/release/build_release.py --embedded-python-archive upstream-embed.zip --output artifacts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install -r requirements.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/release.py --artifacts artifacts --run-embedded
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem artifacts/*.zip | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          } | Set-Content artifacts/SHA256SUMS.txt -Encoding utf8
+
+      - name: Publish test prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          @"
+          Test packages from PR #3:
+          https://github.com/k-g-a/JellyfinToLocalPlayer/pull/3
+
+          Application source commit: $env:PR_COMMIT
+          The PR remains open. This prerelease does not replace the stable latest release.
+
+          - JellyfinToLocalPlayer-python-embed-win32.zip: Windows portable package with embedded Python.
+          - JellyfinToLocalPlayer.zip: package for an installed Python; install requirements.txt first.
+
+          Extract into a separate folder. Follow docs/migration.md to copy your settings.
+          Select your player in config.ini, replace the JavaScript Injector entry with
+          scripts/jellyfinToLocalPlayer.injector.js, and launch launch.bat with option 1 to test.
+          Upgrade the injector and backend together. For multiple instances, pass --config to each launch.
+
+          Both extracted packages passed backend startup checks on Windows before publication.
+          Actual MPC-HC/MPC-BE playback remains to be tested.
+          "@ | Set-Content release-notes.md
+          $assets = Get-ChildItem artifacts/* | ForEach-Object { $_.FullName }
+          if (gh release view $env:TEST_TAG --repo $env:GITHUB_REPOSITORY 2>$null) {
+            gh release upload $env:TEST_TAG $assets --repo $env:GITHUB_REPOSITORY --clobber
+          } else {
+            gh release create $env:TEST_TAG $assets --repo $env:GITHUB_REPOSITORY --target $env:PR_COMMIT --prerelease --latest=false --title "PR #3 test build — Jellyfin-only" --notes-file release-notes.md
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
