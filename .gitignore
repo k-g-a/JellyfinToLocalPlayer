@@ -1,17 +1,19 @@
-embyToLocalPlayer-Windows.ini
-embyToLocalPlayer-Linux.ini
-embyToLocalPlayer-Darwin.ini
-embyToLocalPlayer-Android.ini
-embyToLocalPlayer.ini
-# _config.ini 还支持以上命名，前面优先级高。
+config-Windows.ini
+config-Linux.ini
+config-Darwin.ini
+config-Android.ini
+config-example.ini
+config-diff.ini
 .tmp/
+.instances/
 mpv_embed/
 python_embed/
 log.txt
-trakt_token.json
-
-__pycache__
-.idea
-
-# Per-config runtime state
-.instances/
+*_token.json
+JellyfinToLocalPlayer.zip
+artifacts/
+upstream-embed.zip
+__pycache__/
+*.pyc
+node_modules/
+.idea/

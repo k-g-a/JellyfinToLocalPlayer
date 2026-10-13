@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { JSDOM } = require('jsdom');
-const source = fs.readFileSync('user_script/embyToLocalPlayer.injector.js', 'utf8');
+const source = fs.readFileSync('scripts/jellyfinToLocalPlayer.injector.js', 'utf8');
 const tick = () => new Promise(resolve => setTimeout(resolve, 120));
 (async () => {
     const dom = new JSDOM('<div class="itemDetailPage"><button id="native-play" class="button-flat btnPlay device-play"><span id="native-icon" class="material-icons play_arrow"></span><span class="button-text">Play</span></button><select class="selectAudio"><option value="2" selected>Audio</option></select></div>', {

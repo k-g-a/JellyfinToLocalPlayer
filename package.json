@@ -1,0 +1,6 @@
+{
+  "name": "jellyfin-to-local-player-tests",
+  "private": true,
+  "scripts": { "test": "node tests/injector.cjs" },
+  "devDependencies": { "jsdom": "26.1.0" }
+}
