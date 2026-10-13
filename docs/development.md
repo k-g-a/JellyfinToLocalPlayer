@@ -1,7 +1,8 @@
 # Development and releases
 
-PRs target `translate`. Keep upstream fixes relevant to retained playback features in separate commits,
-with attribution. This Jellyfin-only branch has no dependency on the removed companion projects.
+PRs target `main`. Develop changes on feature branches and review them before merging.
+The project develops independently from its Jellyfin-only baseline. Adopt relevant upstream fixes selectively
+in separate commits with attribution; there is no routine upstream rebase or translation requirement.
 
 ## Run and verify
 
@@ -30,18 +31,22 @@ MPC-HC/MPC-BE check with Jellyfin: launch, resume, seek, close/report, next epis
 
 ## Release cycle
 
-The release trigger remains a push/merge to `fork-release`, or manual dispatch of that branch's
-`.github/workflows/fork-release.yml`. After reviewing and merging the PR into `translate`, merge that commit
-into `fork-release` to publish. PRs against `translate` build and smoke-test the Windows packages without
-publishing. Opening or merging a PR into `translate` does not publish a release.
+`.github/workflows/release.yml` builds Windows packages for PRs targeting `main` and for pushes to `main`.
+PR builds upload the tested packages as the `windows-packages` Actions artifact, without publishing a release.
+Merging a PR into `main` automatically builds, tests and publishes a stable GitHub release from that commit.
+Manual dispatch on `main` can rebuild/publish a release; dispatch on another branch only builds artifacts.
 
+The publish job runs only after the build job succeeds and receives exactly the archives tested by that job.
+Only the publish job has repository write permission. Releases use `release-YYYY.MM.dd.<run number>` tags
+and include SHA-256 checksums. The updater's existing latest-release URL continues to work.
+The old `translate` → `fork-release` promotion step is retired.
 The release builder includes `main.py`, `config.ini`, `launch.bat`, `code/`, `scripts/`, docs and requirements:
 
 - `JellyfinToLocalPlayer.zip`: system-Python package.
 - `JellyfinToLocalPlayer-python-embed-win32.zip`: same code plus `python_embed/`.
 
 Only `python_embed/` comes from the pinned original-author runtime archive. The application code, injector,
-configuration and docs all come from this fork. No players are bundled. The runtime pin and source asset name
+configuration and docs all come from this repository. No players are bundled. The runtime pin and source asset name
 remain in the workflow. Change those separately when deliberately updating embedded Python.
 
 Build locally with an existing runtime archive:
@@ -50,5 +55,13 @@ Build locally with an existing runtime archive:
 python .github/release/build_release.py --embedded-python-archive upstream-embed.zip --output artifacts
 ```
 
-The updater downloads `JellyfinToLocalPlayer.zip` from this fork. Archive names, required files and updater
+The updater downloads `JellyfinToLocalPlayer.zip` from this repository. Archive names, required files and updater
 URL must be changed together if the layout changes again. See [migration.md](migration.md) for old installations.
+
+## Attribution
+
+Most credit belongs to [kjtsune](https://github.com/kjtsune), author of
+[embyToLocalPlayer](https://github.com/kjtsune/embyToLocalPlayer). His prior work accounts for roughly 95%
+of the implementation at the October 2026 transition to independent development. Preserve LICENSE and
+this attribution when distributing code or packages. English docs, Jellyfin-only specialization and injector
+integration are additions made in this repository.

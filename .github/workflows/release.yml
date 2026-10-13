@@ -1,0 +1,102 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_EMBED_RELEASE: "2026.07.18"
+  UPSTREAM_EMBED_ASSET: etlp-python-embed-win32.zip
+
+jobs:
+  build:
+    name: Build Windows packages
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Download pinned embedded Python runtime
+        shell: pwsh
+        run: |
+          $url = "https://github.com/kjtsune/embyToLocalPlayer/releases/download/$env:UPSTREAM_EMBED_RELEASE/$env:UPSTREAM_EMBED_ASSET"
+          Invoke-WebRequest -Uri $url -OutFile upstream-embed.zip
+
+      - name: Build and validate archives
+        shell: pwsh
+        run: |
+          python .github/release/build_release.py --embedded-python-archive upstream-embed.zip --output artifacts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m compileall -q main.py code
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install -r requirements.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tests/release.py --artifacts artifacts --run-embedded
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-ChildItem artifacts/*.zip | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          } | Set-Content artifacts/SHA256SUMS.txt -Encoding utf8
+
+      - name: Save tested packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-packages
+          path: artifacts/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish main release
+    needs: build
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download tested packages
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-packages
+          path: artifacts
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $date = Get-Date -AsUTC -Format "yyyy.MM.dd"
+          $tag = "release-$date.${{ github.run_number }}"
+          $shortSha = $env:GITHUB_SHA.Substring(0, 7)
+          @"
+          Windows packages built and tested from main commit $shortSha.
+
+          - JellyfinToLocalPlayer.zip: package for an installed Python. Install requirements.txt first.
+          - JellyfinToLocalPlayer-python-embed-win32.zip: portable package with embedded Python.
+          - SHA256SUMS.txt: checksums for both archives.
+          - JavaScript Injector script: scripts/jellyfinToLocalPlayer.injector.js in both archives.
+
+          Start with launch.bat. Existing installations must follow docs/migration.md.
+
+          Most credit for the playback implementation belongs to kjtsune, author of embyToLocalPlayer:
+          https://github.com/kjtsune/embyToLocalPlayer
+          Embedded runtime source: kjtsune/embyToLocalPlayer release $env:UPSTREAM_EMBED_RELEASE.
+          "@ | Set-Content -Path release-notes.md
+
+          $assets = Get-ChildItem artifacts/* | ForEach-Object { $_.FullName }
+          if (gh release view $tag 2>$null) {
+            gh release upload $tag $assets --clobber
+          } else {
+            gh release create $tag $assets --target $env:GITHUB_SHA --latest --title "JellyfinToLocalPlayer $tag" --notes-file release-notes.md
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

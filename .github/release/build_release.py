@@ -1,4 +1,4 @@
-"""Build the fork's two Windows release archives.
+"""Build JellyfinToLocalPlayer's two Windows release archives.
 
 Both packages use the Jellyfin-only application layout. Only python_embed is
 borrowed from the pinned original-author runtime archive.

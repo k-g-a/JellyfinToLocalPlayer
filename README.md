@@ -3,6 +3,10 @@
 Play Jellyfin media in a local desktop player, with resume positions and playback progress sent back to Jellyfin.
 This project now focuses on **Jellyfin only**, using the server-side **JavaScript Injector** plugin to add external-player buttons to Jellyfin Web.
 
+**Prior work and credit:** this project is derived from [kjtsune's embyToLocalPlayer](https://github.com/kjtsune/embyToLocalPlayer).
+Most credit belongs to the original author. At this October 2026 transition, his prior work represents
+roughly 95% of the implementation; the playback engine and player integrations come from that work.
+
 Playback is the main concern: local path mapping, HTTP playback, episode playlists, progress and watched status,
 existing player settings/track handling, subtitles, downloads and prefetching. MPC-HC and MPC-BE are the primary
 setup; the existing mpv, mpv.net, PotPlayer, VLC, IINA and Dandan adapters are also retained.
@@ -13,7 +17,7 @@ unchanged. Buttons appear only while their local backend is reachable. No browse
 
 ## Start with one player (Windows)
 
-1. Download from [this fork's releases](https://github.com/k-g-a/JellyfinToLocalPlayer/releases):
+1. Download from [the releases](https://github.com/k-g-a/JellyfinToLocalPlayer/releases):
    - **JellyfinToLocalPlayer-python-embed-win32.zip** includes Python; extract it to a writable folder.
    - **JellyfinToLocalPlayer.zip** uses an installed Python 3.9+; run `python -m pip install -r requirements.txt` after extracting.
 2. Open `config.ini`. Set the actual player executable and select its key. For example:
@@ -127,7 +131,7 @@ a Jellyfin page. If discovery is blocked, check the browser console and the loca
 ## Updating and migration
 
 Use `launch.bat` option **6**, or run `python code/update.py` from the installation folder.
-The updater downloads this fork's source archive, preserves user INIs and runtime state, and writes
+The updater downloads this repository's source archive, preserves user INIs and runtime state, and writes
 `config-example.ini` plus `config-diff.ini` for review. Stop all instances before updating and restart afterwards.
 Refresh the JavaScript Injector entry from `scripts/jellyfinToLocalPlayer.injector.js` as part of each update.
 The updater does not replace embedded Python.
@@ -137,10 +141,10 @@ The backend and injector must be upgraded together because the playback endpoint
 
 ## Scope and prior work
 
-Most credits go to **[kjtsune](https://github.com/kjtsune)**, the original author of
-[embyToLocalPlayer](https://github.com/kjtsune/embyToLocalPlayer). Its playback engine is the basis of this project.
-This fork adds English documentation/translation work, Jellyfin 12 compatibility work, JavaScript Injector
-integration and multiple independently configured external-player buttons.
+The additions made here are English documentation and translation, Jellyfin 12 compatibility,
+JavaScript Injector integration, independent external-player buttons and the Jellyfin-only cleanup.
+The original license is retained in [LICENSE](LICENSE). The project will develop independently from this baseline;
+upstream changes can still be adopted selectively with attribution.
 
 Emby, Plex, qBittorrent integration, Bangumi reporting, embyBangumi, embyDouban, embyEverywhere,
 Telegram notifications, browser userscripts and the standalone mpv reporting Lua script have been removed.

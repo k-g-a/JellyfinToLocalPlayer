@@ -1,7 +1,8 @@
 # JellyfinToLocalPlayer contributor notes
 
 This is a Jellyfin-only Python playback backend plus a JavaScript Injector integration.
-Work against `translate`; PRs target `translate`. Release publication is triggered by `fork-release`.
+PRs target `main`. Pushes/merges to `main` publish releases after the Windows package checks pass.
+The former `translate` and `fork-release` branches are no longer part of the development/release flow.
 
 - `main.py`: entry point; `--config` resolves before modules start logging or workers.
 - `config.ini`: defaults; `[jellyfin]` selects a player; `[server]` controls one instance/button.
@@ -20,5 +21,5 @@ The old `[emby]` config alias and cache index filename exist only for migration.
 `code/__init__.py` is necessary because Python also has a standard-library `code` module.
 Standalone helper entry points must insert the project root first on sys.path.
 Keep multiple-instance state isolated. Never replace window.fetch/XMLHttpRequest or intercept native Play.
-The updater must target this fork, preserve user config/state and reject incompatible release layouts.
+The updater must target this repository, preserve user config/state and reject incompatible release layouts.
 See docs/development.md for validation and release commands. Preserve LICENSE and credit to kjtsune.
